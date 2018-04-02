@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "MidiClockEmulator.h"
+#include "Blocks/MidiClockEmulator.h"
 #include "MidiClockEmulatorTest.h"
 #include "CommonTest.h"
 

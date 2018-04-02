@@ -1,11 +1,11 @@
-#include "MidiRecorderTest.h"
-#include "MidiClockEmulatorTest.h"
+#include "Test/MidiClockEmulatorTest.h"
+#include "Test/MidiRecorderTest.h"
 
 int main()
 {
-    testMidiRecorder();
-
     testMidiClockEmulator();
+
+    testMidiRecorder();
 
     return 0;
 }

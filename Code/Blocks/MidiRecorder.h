@@ -1,7 +1,7 @@
 #ifndef MIDIRECORDER_H_INCLUDED
 #define MIDIRECORDER_H_INCLUDED
 
-#include "Common.h"
+#include "Common/Common.h"
 
 struct MidiRecorder
 {

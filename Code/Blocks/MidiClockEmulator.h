@@ -1,7 +1,7 @@
 #ifndef MIDICLOCKEMULATOR_H_INCLUDED
 #define MIDICLOCKEMULATOR_H_INCLUDED
 
-#include "Common.h"
+#include "Common/Common.h"
 
 struct ClockEmulator
 {

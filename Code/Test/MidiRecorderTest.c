@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "MidiRecorder.h"
+#include "Blocks/MidiRecorder.h"
 #include "MidiRecorderTest.h"
 #include "CommonTest.h"
 
