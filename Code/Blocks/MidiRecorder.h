@@ -382,8 +382,28 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 *(midiGateOuts[i]) = 0;
             }
         }
+        else if(0 == data->mTickCounter)
+        {
+            //Handle all note off events.
+            //Iterate over all open events and stop any that need stopped.
+            for(uint32_t i = 0; i < maxNbOpenEvents; i++)
+            {
+                const uint8_t eventId = data->mOpenEvents[i];
+                if(0xff != eventId)
+                {
+                    const uint32_t openEvent = data->mEvents[eventId];
+                    const uint32_t openEventNoteOffClockCount = QUANTIZE_OFF(openEvent, quantisation);
+                    if(openEventNoteOffClockCount == data->mMidiClockCount)
+                    {
+                        *(midiGateOuts[i]) = 0;
+                        data->mOpenEvents[i] = 0xff;
+                    }
+                }
+            }
+        }
         else if (data->mTide < data->mNbEvents)
         {
+            //Handle all note events.
             //Unpack the current event with some bit swizzling.
             const uint32_t event = data->mEvents[data->mTide];
             const uint32_t noteOnClockCount = QUANTIZE_ON(event, quantisation);
@@ -492,22 +512,6 @@ void tickMidiRecorder(struct MidiRecorder* data)
                         data->mOpenEvents[lowestOpenEventId] = 0xff;
                         */
                     }
-                }
-            }
-        }
-
-        //Iterate over all open events and stop any that need stopped.
-        for(uint32_t i = 0; i < maxNbOpenEvents; i++)
-        {
-            const uint8_t eventId = data->mOpenEvents[i];
-            if(0xff != eventId)
-            {
-                const uint32_t openEvent = data->mEvents[eventId];
-                const uint32_t openEventNoteOffClockCount = QUANTIZE_OFF(openEvent, quantisation);
-                if(openEventNoteOffClockCount == data->mMidiClockCount)
-                {
-                    *(midiGateOuts[i]) = 0;
-                    data->mOpenEvents[i] = 0xff;
                 }
             }
         }

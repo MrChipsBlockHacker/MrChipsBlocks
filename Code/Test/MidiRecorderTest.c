@@ -2026,7 +2026,8 @@ void testMidiRecorder()
     //Test we can trigger consecutive midi clocks.
     // ie on and off in clock N, on and off in clock N + 1
 
-    //Test note-ons and note-offs in last midi clock of loop.
+    //Test note-ons and note-offs in last midi clock of loop ie
+    //Test that note-ons quantised to end of loop are lost.
 }
 
 
