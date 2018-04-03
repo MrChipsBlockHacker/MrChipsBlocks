@@ -1,0 +1,120 @@
+<block name="Midi_Recorder">
+	<category>MidiTools</category>
+	<info></info>
+	<data name="d_midi_recorder">
+		<variable socket="in" info="MidiGateInput0" value="0"/>
+		<variable socket="in" info="MidiNoteInput0" value="0"/>
+		<variable socket="in" info="MidiVelInput0" value="0"/>
+		<variable socket="in" info="MidiGateInput1" value="0"/>
+		<variable socket="in" info="MidiNoteInput1" value="0"/>
+		<variable socket="in" info="MidiVelInput1" value="0"/>
+		<variable socket="in" info="MidiGateInput2" value="0"/>
+		<variable socket="in" info="MidiNoteInput2" value="0"/>
+		<variable socket="in" info="MidiVelInput2" value="0"/>
+		<variable socket="in" info="MidiGateInput3" value="0"/>
+		<variable socket="in" info="MidiNoteInput3" value="0"/>
+		<variable socket="in" info="MidiVelInput3" value="0"/>
+		<variable socket="in" info="MidiGateInput4" value="0"/>
+		<variable socket="in" info="MidiNoteInput4" value="0"/>
+		<variable socket="in" info="MidiVelInput4" value="0"/>
+		<variable socket="in" info="MidiGateInput5" value="0"/>
+		<variable socket="in" info="MidiNoteInput5" value="0"/>
+		<variable socket="in" info="MidiVelInput5" value="0"/>
+		<variable socket="in" info="MidiClockTrigger" value="0"/>
+		<variable socket="in" info="MidiStartStop" value="0"/>
+		<variable socket="in" info="OperationalMode" value="0"/>
+		<variable socket="out" info="MidiGateOutput0" />
+		<variable socket="out" info="MidiNoteOutput0" />
+		<variable socket="out" info="MidiVelOutput0" />
+		<variable socket="out" info="MidiGateOutput1" />
+		<variable socket="out" info="MidiNoteOutput1" />
+		<variable socket="out" info="MidiVelOutput1" />
+		<variable socket="out" info="MidiGateOutput2" />
+		<variable socket="out" info="MidiNoteOutput2" />
+		<variable socket="out" info="MidiVelOutput2" />
+		<variable socket="out" info="MidiGateOutput3" />
+		<variable socket="out" info="MidiNoteOutput3" />
+		<variable socket="out" info="MidiVelOutput3" />
+		<variable socket="out" info="MidiGateOutput4" />
+		<variable socket="out" info="MidiNoteOutput4" />
+		<variable socket="out" info="MidiVelOutput4" />
+		<variable socket="out" info="MidiGateOutput5" />
+		<variable socket="out" info="MidiNoteOutput5" />
+		<variable socket="out" info="MidiVelOutput5" />
+		<variable dtype="uint32_t" name="mNbCountInClocks" editable="1" value="96" info="NumRecordCountInMidiClocks"/>
+		<variable dtype="uint32_t" name="mNbRecordClocks" editable="1" value="96" info="NumLoopMidiClocks"/>
+		<variable dtype="uint32_t" name="mQuantisation" editable="1" value="6" info="PlaybackQuantisation"/>
+		<variable dtype="uint8_t" name="mEventNoteOnsDuringClock[12]" editable="0" />
+		<variable dtype="uint8_t" name="mEventNoteOffsDuringClock[12]" editable="0" />
+		<variable dtype="uint16_t" name="mEventNoteOnTickCountsDuringClock[12]" editable="0" />
+		<variable dtype="uint16_t" name="mEventNoteOffTickCountsDuringClock[12]" editable="0" />
+		<variable dtype="uint8_t" name="mOpenEvents[6]" editable="0" />
+		<variable dtype="uint32_t" name="mEvents[32]" editable="0" />
+		<variable dtype="uint8_t" name="mNbEventNoteOnsDuringClock" editable="0" />
+		<variable dtype="uint8_t" name="mNbEventNoteOffsDuringClock" editable="0" />
+		<variable dtype="uint8_t" name="mNbOpenEvents" editable="0" />
+		<variable dtype="uint8_t" name="mNbEvents" editable="0" />
+		<variable dtype="uint8_t" name="mMidiClockTriggerReady" editable="0" />
+		<variable dtype="uint16_t" name="mMidiClockCount" editable="0" />
+		<variable dtype="uint8_t" name="mPhase" editable="0" />
+		<variable dtype="uint8_t" name="mTide" editable="0" />
+		<variable dtype="uint16_t" name="mTickCounter" editable="0" />
+		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
+	</data>
+	<function name="f_midi_recorder">
+	<![CDATA[
+
+#ifdef	EMULATOR
+//#define _DEBUG           /* Uncomment this line to enable debugging */
+#ifdef 	_DEBUG
+#define MAXDBG	160	
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+FILE *_dbgfile = NULL;
+#define dbg(_fmt, ...) {												\
+	char path[255];														\
+	snprintf(path, 255, "%s\\%s.txt", getenv("HOMEPATH"), __func__);	\
+	time_t _time;														\
+	struct tm *_tm;														\
+	time(&_time);														\
+	_tm = localtime(&_time);											\
+	char _fmtbuf[MAXDBG];												\
+	sprintf(_fmtbuf, "Time: %s", asctime(_tm));							\
+	size_t timeBufLength = strlen(_fmtbuf);								\
+	sprintf(_fmtbuf + timeBufLength, _fmt, ##__VA_ARGS__);				\
+	if(strcmp(data->_lastdbg, _fmtbuf)) {								\
+		_dbgfile = fopen(path, "a");									\
+		fprintf(_dbgfile, _fmtbuf);	 									\
+		fflush(_dbgfile);												\
+		strcpy(data->_lastdbg, _fmtbuf);}}	
+#else //_DEBUG
+#define dbg(_fmt, ...)
+#endif //_DEBUG
+#else
+#define dbg(_fmt, ...)
+#endif //EMULATOR
+		
+		
+// ---------- Your code here:  ---------- //
+
+	
+// ---------- End of your code ---------- //
+
+#ifdef EMULATOR
+#ifdef 	_DEBUG
+	if(_dbgfile) fclose(_dbgfile);
+#endif //_DEBUG
+#endif //EMULATOR
+#undef dbg 
+#undef MAXDBG
+#undef _DEBUG
+
+	]]>
+	</function>
+	<help>
+	<![CDATA[
+<p>Midi Recorder</p> 
+	]]>
+	</help>
+</block>

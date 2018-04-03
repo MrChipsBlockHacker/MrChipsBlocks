@@ -5,6 +5,7 @@
 
 struct MidiRecorder
 {
+    //Input.
     int32_t* in0;   //midi gate
     int32_t* in1;   //midi note
     int32_t* in2;   //midi velocity
@@ -23,15 +24,11 @@ struct MidiRecorder
     int32_t* in15;   //midi gate
     int32_t* in16;   //midi note
     int32_t* in17;   //midi velocity
-
     int32_t* in18;   //midi clock pulse
     int32_t* in19;   //midi clock start
-
     int32_t* in20;   //operational mode
-    int32_t* in21;   //num count-in clocks
-    int32_t* in22;   //num record clocks
-    int32_t* in23;   //quantisation
 
+    //Output.
     int32_t out0;   //midi gate
     int32_t out1;   //midi note
     int32_t out2;   //midi velocity
@@ -51,6 +48,12 @@ struct MidiRecorder
     int32_t out16;   //midi note
     int32_t out17;   //midi velocity
 
+    //Editable input.
+    uint32_t mNbCountInClocks;     //Editable input
+    uint32_t mNbRecordClocks;      //Editable input
+    uint32_t mQuantisation;         //Editable input
+
+    //Internal data.
     uint8_t mEventNoteOnsDuringClock[12];                    //2 for each input
     uint8_t mEventNoteOffsDuringClock[12];                   //2 for each input
     uint16_t mEventNoteOnTickCountsDuringClock[12];          //2 for each input
@@ -157,10 +160,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     const int32_t midiStart = *data->in19;
 
     //Unpack the configuration data.
-    const uint32_t operationalMode = (*data->in20) >> 10;
-    const uint32_t maxNumCountInClocks = ((*data->in21) >> 10);
-    const uint32_t maxNumLoopClocks = ((*data->in22) >> 10);
-    const uint32_t quantisation = ((*data->in23) >> 10);
+    const uint8_t operationalMode = (*data->in20) >> 10;
 
     //Compute the max size of all the buffers that we will use.
     const uint8_t maxNbInputs = sizeof(midiGateIns)/sizeof(int32_t);
@@ -259,7 +259,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //go back to the start of the loop.
              data->mTickCounter = 0;
              data->mMidiClockCount++;
-             if (maxNumLoopClocks == data->mMidiClockCount)
+             if (data->mNbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mTide = 0;
@@ -282,7 +282,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //If we hit the end of the count-in then
              //start recording.
              data->mMidiClockCount++;
-             if (maxNumCountInClocks == data->mMidiClockCount)
+             if (data->mNbCountInClocks == data->mMidiClockCount)
              {
                  //Set everything to zero.
                 data->mMidiClockCount = 0;
@@ -346,7 +346,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //stop recording and start playing back
              //what we recorded.
              data->mMidiClockCount++;
-             if (maxNumLoopClocks == data->mMidiClockCount)
+             if (data->mNbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mPhase = ePhasePlayback;
@@ -364,7 +364,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //back to the start of the loop.
              data->mTickCounter = 0;
              data->mMidiClockCount++;
-             if (maxNumLoopClocks == data->mMidiClockCount)
+             if (data->mNbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mTide = 0;
@@ -407,7 +407,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 if(0xff != eventId)
                 {
                     const uint32_t openEvent = data->mEvents[eventId];
-                    const uint32_t openEventNoteOffClockCount = MR_QUANTIZE_OFF(openEvent, quantisation);
+                    const uint32_t openEventNoteOffClockCount = MR_QUANTIZE_OFF(openEvent, data->mQuantisation);
                     if(openEventNoteOffClockCount == data->mMidiClockCount)
                     {
                         *(midiGateOuts[i]) = 0;
@@ -421,7 +421,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             //Handle all note events.
             //Unpack the current event with some bit swizzling.
             const uint32_t event = data->mEvents[data->mTide];
-            const uint32_t noteOnClockCount = MR_QUANTIZE_ON(event, quantisation);
+            const uint32_t noteOnClockCount = MR_QUANTIZE_ON(event, data->mQuantisation);
             const uint32_t midiNoteNumber = MR_GET_NOTE_NR(event);
             const uint32_t midiVelocity = MR_GET_VELOCITY(event);
 
@@ -470,7 +470,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                     {
                         const uint8_t candidateEventId = data->mOpenEvents[i];
                         const uint32_t candidateEvent = data->mEvents[candidateEventId];
-                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, quantisation);
+                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, data->mQuantisation);
                         if(candidateNoteOnClockCount < oldestNoteOnClockCount)
                         {
                             oldestOpenEventId = i;
