@@ -242,9 +242,9 @@ void initialiseMidiRecorder(struct MidiRecorderTestData* testData, struct MidiRe
 
     //Set the configuration data.
     *midiRecorder->in20 = testData->mOperationalMode << 10;
-    midiRecorder->mNbCountInClocks = testData->mNbCountInClocks;
-    midiRecorder->mNbRecordClocks = testData->mNbRecordClocks ;
-    midiRecorder->mQuantisation = testData->mQuantisation;
+    midiRecorder->mNbCountInClocks = testData->mNbCountInClocks << 10;
+    midiRecorder->mNbRecordClocks = testData->mNbRecordClocks << 10;
+    midiRecorder->mQuantisation = testData->mQuantisation << 10;
 }
 
 void tickMidiRecorderTest
@@ -253,9 +253,9 @@ void tickMidiRecorderTest
 {
     //Set the configuration data.
     *midiRecorder->in20 = testData->mOperationalMode << 10;
-    midiRecorder->mNbCountInClocks = testData->mNbCountInClocks;
-    midiRecorder->mNbRecordClocks = testData->mNbRecordClocks ;
-    midiRecorder->mQuantisation = testData->mQuantisation;
+    midiRecorder->mNbCountInClocks = testData->mNbCountInClocks << 10;
+    midiRecorder->mNbRecordClocks = testData->mNbRecordClocks << 10;
+    midiRecorder->mQuantisation = testData->mQuantisation << 10;
 
     //Set the clock trigger.
     if(0 == (tickCount % testData->mClockPulseTickPeriod))

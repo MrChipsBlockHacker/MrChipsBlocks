@@ -161,6 +161,10 @@ void tickMidiRecorder(struct MidiRecorder* data)
 
     //Unpack the configuration data.
     const uint8_t operationalMode = (*data->in20) >> 10;
+    const uint8_t nbCountInClocks = data->mNbCountInClocks >> 10;
+    const uint8_t nbRecordClocks = data->mNbRecordClocks >> 10;
+    const uint8_t quantisation = data->mQuantisation >> 10;
+
 
     //Compute the max size of all the buffers that we will use.
     const uint8_t maxNbInputs = sizeof(midiGateIns)/sizeof(int32_t);
@@ -169,6 +173,10 @@ void tickMidiRecorder(struct MidiRecorder* data)
     const uint8_t maxNbOpenEvents = sizeof(data->mOpenEvents) / sizeof(uint8_t);
     const uint8_t maxNbNoteOnsPerClock = sizeof(data->mEventNoteOnsDuringClock)/sizeof(uint8_t);
     const uint8_t maxNbNoteOffsPerClock = sizeof(data->mEventNoteOffsDuringClock)/sizeof(uint8_t);
+
+    //Patchblocks requires loop counter to be declared externally to loop.
+    //Must be using something pre-C99.
+    uint32_t i;
 
     //Let's start the update code.
     //If midiStart is off then reset everything to zero and return.
@@ -189,13 +197,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
         data->mTickCounter = 0;
 
         //Set all open events to available.
-        for(uint32_t i = 0; i < maxNbOpenEvents; i++)
+        for(i = 0; i < maxNbOpenEvents; i++)
         {
             data->mOpenEvents[i] = 0xff;
         }
 
         //Route input to output.
-        for(uint32_t i = 0; i < maxNbInputs; i++)
+        for(i = 0; i < maxNbInputs; i++)
         {
             *(midiGateOuts[i]) = midiGateIns[i];
             *(midiNoteOuts[i]) = midiNoteIns[i];
@@ -205,7 +213,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
         //Zero all hanging notes from playback.
         if(ePhasePlayback == prevPhase)
         {
-            for(uint32_t i = 0; i < maxNbInputs; i++)
+            for(i = 0; i < maxNbInputs; i++)
             {
                 *(midiGateOuts[i]) = 0;
             }
@@ -224,7 +232,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
         data->mPhase = ePhaseWaiting;
 
         //Route input to output.
-        for(uint32_t i = 0; i < maxNbInputs; i++)
+        for(i = 0; i < maxNbInputs; i++)
         {
             *(midiGateOuts[i]) = midiGateIns[i];
             *(midiNoteOuts[i]) = midiNoteIns[i];
@@ -259,7 +267,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //go back to the start of the loop.
              data->mTickCounter = 0;
              data->mMidiClockCount++;
-             if (data->mNbRecordClocks == data->mMidiClockCount)
+             if (nbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mTide = 0;
@@ -282,7 +290,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //If we hit the end of the count-in then
              //start recording.
              data->mMidiClockCount++;
-             if (data->mNbCountInClocks == data->mMidiClockCount)
+             if (nbCountInClocks == data->mMidiClockCount)
              {
                  //Set everything to zero.
                 data->mMidiClockCount = 0;
@@ -292,7 +300,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 data->mPhase = ePhaseRecord;
 
                 //Set all events to zero before recording.
-                for (uint32_t i = 0; i < maxNbEvents; i++)
+                for (i = 0; i < maxNbEvents; i++)
                 {
                    data->mEvents[i] = 0;
                 }
@@ -306,7 +314,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
               //Iterate over all note-on events recorded since the previous clock
               //and decide if they have occurred at a tick count closer
               //to the previous clock or the current clock.
-              for(uint32_t i = 0; i < data->mNbEventNoteOnsDuringClock;i++)
+              for(i = 0; i < data->mNbEventNoteOnsDuringClock;i++)
               {
                   const uint16_t tickCount = data->mEventNoteOnTickCountsDuringClock[i];
                   if((tickCounterAtClock1 - tickCount) < (tickCount - 0))
@@ -321,7 +329,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
               //Iterate over all note-off events recorded since the previous clock
               //and decide if they have occurred at a tick count closer
               //to the previous clock or the current clock.
-              for(uint32_t i = 0; i < data->mNbEventNoteOffsDuringClock; i++)
+              for(i = 0; i < data->mNbEventNoteOffsDuringClock; i++)
               {
                   const uint8_t eventId = data->mEventNoteOffsDuringClock[i];
                   const uint16_t tickCount = data->mEventNoteOffTickCountsDuringClock[i];
@@ -346,7 +354,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //stop recording and start playing back
              //what we recorded.
              data->mMidiClockCount++;
-             if (data->mNbRecordClocks == data->mMidiClockCount)
+             if (nbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mPhase = ePhasePlayback;
@@ -364,7 +372,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
              //back to the start of the loop.
              data->mTickCounter = 0;
              data->mMidiClockCount++;
-             if (data->mNbRecordClocks == data->mMidiClockCount)
+             if (nbRecordClocks == data->mMidiClockCount)
              {
                 data->mMidiClockCount = 0;
                 data->mTide = 0;
@@ -391,7 +399,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             //Send note-off to all outputs for 1 tick
             //to ensure no hanging note-ons from previous
             //loop.
-            for(uint32_t i = 0; i < maxNbOutputs; i++)
+            for(i = 0; i < maxNbOutputs; i++)
             {
                 *(midiGateOuts[i]) = 0;
                 data->mOpenEvents[i] = 0xff;
@@ -401,13 +409,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
         {
             //Handle all note off events.
             //Iterate over all open events and stop any that need stopped.
-            for(uint32_t i = 0; i < maxNbOpenEvents; i++)
+            for(i = 0; i < maxNbOpenEvents; i++)
             {
                 const uint8_t eventId = data->mOpenEvents[i];
                 if(0xff != eventId)
                 {
                     const uint32_t openEvent = data->mEvents[eventId];
-                    const uint32_t openEventNoteOffClockCount = MR_QUANTIZE_OFF(openEvent, data->mQuantisation);
+                    const uint32_t openEventNoteOffClockCount = MR_QUANTIZE_OFF(openEvent, quantisation);
                     if(openEventNoteOffClockCount == data->mMidiClockCount)
                     {
                         *(midiGateOuts[i]) = 0;
@@ -421,7 +429,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             //Handle all note events.
             //Unpack the current event with some bit swizzling.
             const uint32_t event = data->mEvents[data->mTide];
-            const uint32_t noteOnClockCount = MR_QUANTIZE_ON(event, data->mQuantisation);
+            const uint32_t noteOnClockCount = MR_QUANTIZE_ON(event, quantisation);
             const uint32_t midiNoteNumber = MR_GET_NOTE_NR(event);
             const uint32_t midiVelocity = MR_GET_VELOCITY(event);
 
@@ -437,7 +445,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
 
                 //Find an available open event.
                 uint8_t availableOpenEventId = 0xff;
-                for(uint32_t i = 0; i < maxNbOpenEvents; i++)
+                for(i = 0; i < maxNbOpenEvents; i++)
                 {
                     if(0xff == data->mOpenEvents[i])
                     {
@@ -466,11 +474,11 @@ void tickMidiRecorder(struct MidiRecorder* data)
                     uint8_t oldestOpenEventId = 0xff;
                     uint8_t oldestNoteOnClockCount = noteOnClockCount;
                     uint32_t oldestEvent = 0;
-                    for(uint32_t i = 0; i < maxNbOpenEvents; i++)
+                    for(i = 0; i < maxNbOpenEvents; i++)
                     {
                         const uint8_t candidateEventId = data->mOpenEvents[i];
                         const uint32_t candidateEvent = data->mEvents[candidateEventId];
-                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, data->mQuantisation);
+                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, quantisation);
                         if(candidateNoteOnClockCount < oldestNoteOnClockCount)
                         {
                             oldestOpenEventId = i;
@@ -537,7 +545,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     else if (ePhaseRecord == data->mPhase)
     {
         //Iterate over all the inputs.
-        for(uint32_t i = 0; i < maxNbInputs; i++)
+        for(i = 0; i < maxNbInputs; i++)
         {
             //Get the incoming midi information.
             const int32_t midiGateIn = midiGateIns[i];
@@ -603,7 +611,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
         }
 
         //Send the values to the output.
-        for(uint32_t i = 0; i < maxNbInputs; i++)
+        for(i = 0; i < maxNbInputs; i++)
         {
             *(midiGateOuts[i]) = midiGateIns[i];
             *(midiNoteOuts[i]) = midiNoteIns[i];
@@ -616,7 +624,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     else
     {
        //Send the values to the output.
-        for(uint32_t i = 0; i < maxNbInputs; i++)
+        for(i = 0; i < maxNbInputs; i++)
         {
             *(midiGateOuts[i]) = midiGateIns[i];
             *(midiNoteOuts[i]) = midiNoteIns[i];
