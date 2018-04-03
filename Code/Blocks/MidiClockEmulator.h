@@ -3,7 +3,7 @@
 
 #include "Common/Common.h"
 
-struct ClockEmulator
+struct MidiClockEmulator
 {
     int32_t* in0; //bpm
     int32_t* in1;//gate
@@ -13,7 +13,7 @@ struct ClockEmulator
     int32_t out1;//start/stop
 };
 
-void tickMidiClockEmulator(struct ClockEmulator* data)
+void tickMidiClockEmulator(struct MidiClockEmulator* data)
 {
     //**********************************************
     //Patchblock code starts here

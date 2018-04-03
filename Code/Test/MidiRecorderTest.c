@@ -12,105 +12,105 @@ void testMacros()
 {
     //Test packing and unpacking.
     {
-        uint32_t e = PACK_EVENT(5, 8, 60, 100);
-        const uint32_t on = GET_NOTE_ON_CLOCK(e);
+        uint32_t e = MR_PACK_EVENT(5, 8, 60, 100);
+        const uint32_t on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(5 == on);
-        const uint32_t off = GET_NOTE_OFF_CLOCK(e);
+        const uint32_t off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(8 == off);
-        const uint32_t note = GET_NOTE_NR(e);
+        const uint32_t note = MR_GET_NOTE_NR(e);
         TEST_ASSERT(60 == note);
-        const uint32_t vel = GET_VELOCITY(e);
+        const uint32_t vel = MR_GET_VELOCITY(e);
         TEST_ASSERT(100 == vel);
     }
 
     //Test up to maximum of range.
     {
-        uint32_t e = PACK_EVENT(511, 511, 127, 127);
-        const uint32_t on = GET_NOTE_ON_CLOCK(e);
+        uint32_t e = MR_PACK_EVENT(511, 511, 127, 127);
+        const uint32_t on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(511 == on);
-        const uint32_t off = GET_NOTE_OFF_CLOCK(e);
+        const uint32_t off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(511 == off);
-        const uint32_t note = GET_NOTE_NR(e);
+        const uint32_t note = MR_GET_NOTE_NR(e);
         TEST_ASSERT(127 == note);
-        const uint32_t vel = GET_VELOCITY(e);
+        const uint32_t vel = MR_GET_VELOCITY(e);
         TEST_ASSERT(127 == vel);
     }
 
     //Test minimum of range.
     {
-        uint32_t e = PACK_EVENT(0, 0, 0, 0);
-        const uint32_t on = GET_NOTE_ON_CLOCK(e);
+        uint32_t e = MR_PACK_EVENT(0, 0, 0, 0);
+        const uint32_t on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(0 == on);
-        const uint32_t off = GET_NOTE_OFF_CLOCK(e);
+        const uint32_t off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(0 == off);
-        const uint32_t note = GET_NOTE_NR(e);
+        const uint32_t note = MR_GET_NOTE_NR(e);
         TEST_ASSERT(0 == note);
-        const uint32_t vel = GET_VELOCITY(e);
+        const uint32_t vel = MR_GET_VELOCITY(e);
         TEST_ASSERT(0 == vel);
     }
 
     //Test note-on increment.
     {
-        uint32_t e = PACK_EVENT(17, 35, 60, 100);
-        e = INC_NOTE_ON_CLOCK(e, 22);
-        int32_t on = GET_NOTE_ON_CLOCK(e);
+        uint32_t e = MR_PACK_EVENT(17, 35, 60, 100);
+        e = MR_INC_NOTE_ON_CLOCK(e, 22);
+        int32_t on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(on == 39);
-        e = INC_NOTE_ON_CLOCK(e, 0);
-        on = GET_NOTE_ON_CLOCK(e);
+        e = MR_INC_NOTE_ON_CLOCK(e, 0);
+        on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(on == 39);
-        e = INC_NOTE_ON_CLOCK(e, -7);
-        on = GET_NOTE_ON_CLOCK(e);
+        e = MR_INC_NOTE_ON_CLOCK(e, -7);
+        on = MR_GET_NOTE_ON_CLOCK(e);
         TEST_ASSERT(on == 32);
-        TEST_ASSERT(GET_NOTE_OFF_CLOCK(e) == 35);
-        TEST_ASSERT(GET_NOTE_NR(e) == 60);
-        TEST_ASSERT(GET_VELOCITY(e) == 100);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(e) == 35);
+        TEST_ASSERT(MR_GET_NOTE_NR(e) == 60);
+        TEST_ASSERT(MR_GET_VELOCITY(e) == 100);
     }
 
     //Test note-on increment.
     {
-        uint32_t e = PACK_EVENT(17, 35, 60, 100);
-        e = INC_NOTE_OFF_CLOCK(e, 22);
-        int32_t off = GET_NOTE_OFF_CLOCK(e);
+        uint32_t e = MR_PACK_EVENT(17, 35, 60, 100);
+        e = MR_INC_NOTE_OFF_CLOCK(e, 22);
+        int32_t off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(off == 57);
-        e = INC_NOTE_OFF_CLOCK(e, 0);
-        off = GET_NOTE_OFF_CLOCK(e);
+        e = MR_INC_NOTE_OFF_CLOCK(e, 0);
+        off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(off == 57);
-        e = INC_NOTE_OFF_CLOCK(e, -17);
-        off = GET_NOTE_OFF_CLOCK(e);
+        e = MR_INC_NOTE_OFF_CLOCK(e, -17);
+        off = MR_GET_NOTE_OFF_CLOCK(e);
         TEST_ASSERT(off == 40);
-        TEST_ASSERT(GET_NOTE_ON_CLOCK(e) == 17);
-        TEST_ASSERT(GET_NOTE_NR(e) == 60);
-        TEST_ASSERT(GET_VELOCITY(e) == 100);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(e) == 17);
+        TEST_ASSERT(MR_GET_NOTE_NR(e) == 60);
+        TEST_ASSERT(MR_GET_VELOCITY(e) == 100);
     }
 
     //Test quantisation on
     {
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(42 + 3, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(42 + 4, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(42 + 5, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(48, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(48 + 1, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(48 + 2, 55, 60, 100), 6) == 48);
-        TEST_ASSERT(QUANTIZE_ON(PACK_EVENT(48 + 3, 55, 60, 100), 6) == 54);
-        TEST_ASSERT(GET_NOTE_ON_CLOCK(PACK_EVENT(48 + 3, 55, 60, 100)) == 51);
-        TEST_ASSERT(GET_NOTE_OFF_CLOCK(PACK_EVENT(48 + 3, 55, 60, 100)) == 55);
-        TEST_ASSERT(GET_NOTE_NR(PACK_EVENT(48 + 3, 55, 60, 100)) == 60);
-        TEST_ASSERT(GET_VELOCITY(PACK_EVENT(48 + 3, 55, 60, 100)) == 100);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(42 + 3, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(42 + 4, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(42 + 5, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(48, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(48 + 1, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(48 + 2, 55, 60, 100), 6) == 48);
+        TEST_ASSERT(MR_QUANTIZE_ON(MR_PACK_EVENT(48 + 3, 55, 60, 100), 6) == 54);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 51);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 55);
+        TEST_ASSERT(MR_GET_NOTE_NR(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 60);
+        TEST_ASSERT(MR_GET_VELOCITY(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 100);
     }
 
     //Test quantisation off preserves duration.
     {
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(42 + 3, 55, 60, 100), 6) == 58);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(42 + 4, 55, 60, 100), 6) == 57);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(42 + 5, 55, 60, 100), 6) == 56);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(48, 55, 60, 100), 6) == 55);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(48 + 1, 55, 60, 100), 6) == 54);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(48 + 2, 55, 60, 100), 6) == 53);
-        TEST_ASSERT(QUANTIZE_OFF(PACK_EVENT(48 + 3, 55, 60, 100), 6) == 58);
-        TEST_ASSERT(GET_NOTE_ON_CLOCK(PACK_EVENT(48 + 3, 55, 60, 100)) == 51);
-        TEST_ASSERT(GET_NOTE_OFF_CLOCK(PACK_EVENT(48 + 3, 55, 60, 100)) == 55);
-        TEST_ASSERT(GET_NOTE_NR(PACK_EVENT(48 + 3, 55, 60, 100)) == 60);
-        TEST_ASSERT(GET_VELOCITY(PACK_EVENT(48 + 3, 55, 60, 100)) == 100);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(42 + 3, 55, 60, 100), 6) == 58);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(42 + 4, 55, 60, 100), 6) == 57);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(42 + 5, 55, 60, 100), 6) == 56);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(48, 55, 60, 100), 6) == 55);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(48 + 1, 55, 60, 100), 6) == 54);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(48 + 2, 55, 60, 100), 6) == 53);
+        TEST_ASSERT(MR_QUANTIZE_OFF(MR_PACK_EVENT(48 + 3, 55, 60, 100), 6) == 58);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 51);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 55);
+        TEST_ASSERT(MR_GET_NOTE_NR(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 60);
+        TEST_ASSERT(MR_GET_VELOCITY(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 100);
     }
 }
 
@@ -183,8 +183,8 @@ int cmpfunc (const void * _x, const void * _y)
 {
     const uint32_t x = *(uint32_t*)_x;
     const uint32_t y = *(uint32_t*)_y;
-    const uint32_t noteOnX = GET_NOTE_ON_CLOCK(x);
-    const uint32_t noteOnY = GET_NOTE_ON_CLOCK(y);
+    const uint32_t noteOnX = MR_GET_NOTE_ON_CLOCK(x);
+    const uint32_t noteOnY = MR_GET_NOTE_ON_CLOCK(y);
     return (noteOnX - noteOnY);
 }
 
@@ -397,13 +397,13 @@ void tickMidiRecorderTest
                 {
                     //Start.
                     const uint32_t nb = stream->mNb[i];
-                    stream->mPackedEvents[i][nb] = PACK_EVENT(midiRecorder->mMidiClockCount, 0, noteOut, velOut);
+                    stream->mPackedEvents[i][nb] = MR_PACK_EVENT(midiRecorder->mMidiClockCount, 0, noteOut, velOut);
                 }
                 else
                 {
                     //End.
                     const uint32_t nb = stream->mNb[i];
-                    stream->mPackedEvents[i][nb] = INC_NOTE_OFF_CLOCK(stream->mPackedEvents[i][nb], midiRecorder->mMidiClockCount);
+                    stream->mPackedEvents[i][nb] = MR_INC_NOTE_OFF_CLOCK(stream->mPackedEvents[i][nb], midiRecorder->mMidiClockCount);
                     stream->mNb[i]++;
                 }
             }
@@ -1038,8 +1038,8 @@ void testMidiClockQuantisation()
         }
         TEST_ASSERT(4 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(15 == GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(16 == GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
     }
 
     //An on event late in midi clock count 15, off late in midi clock count 16
@@ -1061,8 +1061,8 @@ void testMidiClockQuantisation()
         }
         TEST_ASSERT(4 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(16 == GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
     }
 
     //An on event early in midi clock count 15, off late in midi clock count 16
@@ -1084,8 +1084,8 @@ void testMidiClockQuantisation()
         }
         TEST_ASSERT(4 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(15 == GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
     }
 
     //An on event late in midi clock count 15, off early in midi clock count 16
@@ -1108,8 +1108,8 @@ void testMidiClockQuantisation()
         }
         TEST_ASSERT(4 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(16 == GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
     }
 }
 
@@ -1153,12 +1153,12 @@ void testOverlappingConsecutiveChords()
     }
     TEST_ASSERT(4 == midiRecorder.mPhase);
     TEST_ASSERT(6 == midiRecorder.mNbEvents);
-    TEST_ASSERT(midiRecorder.mEvents[0] == PACK_EVENT(12, 21, 61, 21));
-    TEST_ASSERT(midiRecorder.mEvents[1] == PACK_EVENT(12, 21, 60, 20));
-    TEST_ASSERT(midiRecorder.mEvents[2] == PACK_EVENT(13, 21, 62, 22));
-    TEST_ASSERT(midiRecorder.mEvents[3] == PACK_EVENT(21, 31, 71, 31));
-    TEST_ASSERT(midiRecorder.mEvents[4] == PACK_EVENT(21, 31, 72, 32));
-    TEST_ASSERT(midiRecorder.mEvents[5] == PACK_EVENT(21, 31, 70, 30));
+    TEST_ASSERT(midiRecorder.mEvents[0] == MR_PACK_EVENT(12, 21, 61, 21));
+    TEST_ASSERT(midiRecorder.mEvents[1] == MR_PACK_EVENT(12, 21, 60, 20));
+    TEST_ASSERT(midiRecorder.mEvents[2] == MR_PACK_EVENT(13, 21, 62, 22));
+    TEST_ASSERT(midiRecorder.mEvents[3] == MR_PACK_EVENT(21, 31, 71, 31));
+    TEST_ASSERT(midiRecorder.mEvents[4] == MR_PACK_EVENT(21, 31, 72, 32));
+    TEST_ASSERT(midiRecorder.mEvents[5] == MR_PACK_EVENT(21, 31, 70, 30));
 }
 
 void testEventLimit()
@@ -1225,43 +1225,43 @@ void testEventLimit()
     TEST_ASSERT(4 == midiRecorder.mPhase);
     TEST_ASSERT(maxNbEvents == midiRecorder.mNbEvents);
 
-    TEST_ASSERT(PACK_EVENT(0, 1, 12, 50) == midiRecorder.mEvents[0]);
-    TEST_ASSERT(PACK_EVENT(0, 1, 13, 51) == midiRecorder.mEvents[1]);
-    TEST_ASSERT(PACK_EVENT(0, 1, 14, 52) == midiRecorder.mEvents[2]);
-    TEST_ASSERT(PACK_EVENT(0, 1, 15, 53) == midiRecorder.mEvents[3]);
-    TEST_ASSERT(PACK_EVENT(0, 1, 16, 54) == midiRecorder.mEvents[4]);
-    TEST_ASSERT(PACK_EVENT(0, 1, 17, 55) == midiRecorder.mEvents[5]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 12, 50) == midiRecorder.mEvents[0]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 13, 51) == midiRecorder.mEvents[1]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 14, 52) == midiRecorder.mEvents[2]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 15, 53) == midiRecorder.mEvents[3]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 16, 54) == midiRecorder.mEvents[4]);
+    TEST_ASSERT(MR_PACK_EVENT(0, 1, 17, 55) == midiRecorder.mEvents[5]);
 
-    TEST_ASSERT(PACK_EVENT(2, 3, 12, 50) == midiRecorder.mEvents[6]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 13, 51) == midiRecorder.mEvents[7]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 14, 52) == midiRecorder.mEvents[8]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 15, 53) == midiRecorder.mEvents[9]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 16, 54) == midiRecorder.mEvents[10]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 17, 55) == midiRecorder.mEvents[11]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 12, 50) == midiRecorder.mEvents[6]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 13, 51) == midiRecorder.mEvents[7]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 14, 52) == midiRecorder.mEvents[8]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 15, 53) == midiRecorder.mEvents[9]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 16, 54) == midiRecorder.mEvents[10]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 17, 55) == midiRecorder.mEvents[11]);
 
-    TEST_ASSERT(PACK_EVENT(4, 5, 12, 50) == midiRecorder.mEvents[12]);
-    TEST_ASSERT(PACK_EVENT(4, 5, 13, 51) == midiRecorder.mEvents[13]);
-    TEST_ASSERT(PACK_EVENT(4, 5, 14, 52) == midiRecorder.mEvents[14]);
-    TEST_ASSERT(PACK_EVENT(4, 5, 15, 53) == midiRecorder.mEvents[15]);
-    TEST_ASSERT(PACK_EVENT(4, 5, 16, 54) == midiRecorder.mEvents[16]);
-    TEST_ASSERT(PACK_EVENT(4, 5, 17, 55) == midiRecorder.mEvents[17]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 12, 50) == midiRecorder.mEvents[12]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 13, 51) == midiRecorder.mEvents[13]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 14, 52) == midiRecorder.mEvents[14]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 15, 53) == midiRecorder.mEvents[15]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 16, 54) == midiRecorder.mEvents[16]);
+    TEST_ASSERT(MR_PACK_EVENT(4, 5, 17, 55) == midiRecorder.mEvents[17]);
 
-    TEST_ASSERT(PACK_EVENT(6, 7, 12, 50) == midiRecorder.mEvents[18]);
-    TEST_ASSERT(PACK_EVENT(6, 7, 13, 51) == midiRecorder.mEvents[19]);
-    TEST_ASSERT(PACK_EVENT(6, 7, 14, 52) == midiRecorder.mEvents[20]);
-    TEST_ASSERT(PACK_EVENT(6, 7, 15, 53) == midiRecorder.mEvents[21]);
-    TEST_ASSERT(PACK_EVENT(6, 7, 16, 54) == midiRecorder.mEvents[22]);
-    TEST_ASSERT(PACK_EVENT(6, 7, 17, 55) == midiRecorder.mEvents[23]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 12, 50) == midiRecorder.mEvents[18]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 13, 51) == midiRecorder.mEvents[19]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 14, 52) == midiRecorder.mEvents[20]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 15, 53) == midiRecorder.mEvents[21]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 16, 54) == midiRecorder.mEvents[22]);
+    TEST_ASSERT(MR_PACK_EVENT(6, 7, 17, 55) == midiRecorder.mEvents[23]);
 
-    TEST_ASSERT(PACK_EVENT(8, 9, 12, 50) == midiRecorder.mEvents[24]);
-    TEST_ASSERT(PACK_EVENT(8, 9, 13, 51) == midiRecorder.mEvents[25]);
-    TEST_ASSERT(PACK_EVENT(8, 9, 14, 52) == midiRecorder.mEvents[26]);
-    TEST_ASSERT(PACK_EVENT(8, 9, 15, 53) == midiRecorder.mEvents[27]);
-    TEST_ASSERT(PACK_EVENT(8, 9, 16, 54) == midiRecorder.mEvents[28]);
-    TEST_ASSERT(PACK_EVENT(8, 9, 17, 55) == midiRecorder.mEvents[29]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 12, 50) == midiRecorder.mEvents[24]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 13, 51) == midiRecorder.mEvents[25]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 14, 52) == midiRecorder.mEvents[26]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 15, 53) == midiRecorder.mEvents[27]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 16, 54) == midiRecorder.mEvents[28]);
+    TEST_ASSERT(MR_PACK_EVENT(8, 9, 17, 55) == midiRecorder.mEvents[29]);
 
-    TEST_ASSERT(PACK_EVENT(10, 11, 12, 50) == midiRecorder.mEvents[30]);
-    TEST_ASSERT(PACK_EVENT(10, 11, 13, 51) == midiRecorder.mEvents[31]);
+    TEST_ASSERT(MR_PACK_EVENT(10, 11, 12, 50) == midiRecorder.mEvents[30]);
+    TEST_ASSERT(MR_PACK_EVENT(10, 11, 13, 51) == midiRecorder.mEvents[31]);
 }
 
 void testNoteOnLimitPerClock()
@@ -1337,25 +1337,25 @@ void testNoteOnLimitPerClock()
     }
     TEST_ASSERT(4 == midiRecorder.mPhase);
     TEST_ASSERT(19 == midiRecorder.mNbEvents);
-    TEST_ASSERT(PACK_EVENT(2, 3, 12, 50) == midiRecorder.mEvents[0]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 13, 51) == midiRecorder.mEvents[1]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 14, 52) == midiRecorder.mEvents[2]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 15, 53) == midiRecorder.mEvents[3]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 16, 54) == midiRecorder.mEvents[4]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 17, 55) == midiRecorder.mEvents[5]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 18, 56) == midiRecorder.mEvents[6]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 19, 57) == midiRecorder.mEvents[7]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 20, 58) == midiRecorder.mEvents[8]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 21, 59) == midiRecorder.mEvents[9]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 22, 60) == midiRecorder.mEvents[10]);
-    TEST_ASSERT(PACK_EVENT(2, 3, 23, 61) == midiRecorder.mEvents[11]);
-    TEST_ASSERT(PACK_EVENT(3, 7, 24, 62) == midiRecorder.mEvents[12]);
-    TEST_ASSERT(PACK_EVENT(3, 8, 25, 63) == midiRecorder.mEvents[13]);
-    TEST_ASSERT(PACK_EVENT(3, 9, 26, 64) == midiRecorder.mEvents[14]);
-    TEST_ASSERT(PACK_EVENT(3, 10, 27, 65) == midiRecorder.mEvents[15]);
-    TEST_ASSERT(PACK_EVENT(3, 11, 28, 66) == midiRecorder.mEvents[16]);
-    TEST_ASSERT(PACK_EVENT(3, 12, 29, 67) == midiRecorder.mEvents[17]);
-    TEST_ASSERT(PACK_EVENT(13, 16, 30, 68) == midiRecorder.mEvents[18]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 12, 50) == midiRecorder.mEvents[0]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 13, 51) == midiRecorder.mEvents[1]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 14, 52) == midiRecorder.mEvents[2]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 15, 53) == midiRecorder.mEvents[3]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 16, 54) == midiRecorder.mEvents[4]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 17, 55) == midiRecorder.mEvents[5]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 18, 56) == midiRecorder.mEvents[6]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 19, 57) == midiRecorder.mEvents[7]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 20, 58) == midiRecorder.mEvents[8]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 21, 59) == midiRecorder.mEvents[9]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 22, 60) == midiRecorder.mEvents[10]);
+    TEST_ASSERT(MR_PACK_EVENT(2, 3, 23, 61) == midiRecorder.mEvents[11]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 7, 24, 62) == midiRecorder.mEvents[12]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 8, 25, 63) == midiRecorder.mEvents[13]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 9, 26, 64) == midiRecorder.mEvents[14]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 10, 27, 65) == midiRecorder.mEvents[15]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 11, 28, 66) == midiRecorder.mEvents[16]);
+    TEST_ASSERT(MR_PACK_EVENT(3, 12, 29, 67) == midiRecorder.mEvents[17]);
+    TEST_ASSERT(MR_PACK_EVENT(13, 16, 30, 68) == midiRecorder.mEvents[18]);
 }
 
 void testNoteOffLimitPerClock()
@@ -1431,25 +1431,25 @@ void testNoteOffLimitPerClock()
     TEST_ASSERT(4 == midiRecorder.mPhase);
     TEST_ASSERT(19 == midiRecorder.mNbEvents);
 
-    TEST_ASSERT(PACK_EVENT(19, 20, 12, 50) == midiRecorder.mEvents[0]);
-    TEST_ASSERT(PACK_EVENT(19, 20, 13, 51) == midiRecorder.mEvents[1]);
-    TEST_ASSERT(PACK_EVENT(19, 20, 14, 52) == midiRecorder.mEvents[2]);
-    TEST_ASSERT(PACK_EVENT(19, 20, 15, 53) == midiRecorder.mEvents[3]);
-    TEST_ASSERT(PACK_EVENT(19, 20, 16, 54) == midiRecorder.mEvents[4]);
-    TEST_ASSERT(PACK_EVENT(19, 20, 17, 55) == midiRecorder.mEvents[5]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 18, 56) == midiRecorder.mEvents[6]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 19, 57) == midiRecorder.mEvents[7]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 20, 58) == midiRecorder.mEvents[8]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 21, 59) == midiRecorder.mEvents[9]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 22, 60) == midiRecorder.mEvents[10]);
-    TEST_ASSERT(PACK_EVENT(20, 21, 23, 61) == midiRecorder.mEvents[11]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 12, 50) == midiRecorder.mEvents[0]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 13, 51) == midiRecorder.mEvents[1]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 14, 52) == midiRecorder.mEvents[2]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 15, 53) == midiRecorder.mEvents[3]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 16, 54) == midiRecorder.mEvents[4]);
+    TEST_ASSERT(MR_PACK_EVENT(19, 20, 17, 55) == midiRecorder.mEvents[5]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 18, 56) == midiRecorder.mEvents[6]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 19, 57) == midiRecorder.mEvents[7]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 20, 58) == midiRecorder.mEvents[8]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 21, 59) == midiRecorder.mEvents[9]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 22, 60) == midiRecorder.mEvents[10]);
+    TEST_ASSERT(MR_PACK_EVENT(20, 21, 23, 61) == midiRecorder.mEvents[11]);
     TEST_ASSERT(0 == midiRecorder.mEvents[12]);
     TEST_ASSERT(0 == midiRecorder.mEvents[13]);
     TEST_ASSERT(0 == midiRecorder.mEvents[14]);
     TEST_ASSERT(0 == midiRecorder.mEvents[15]);
     TEST_ASSERT(0 == midiRecorder.mEvents[16]);
     TEST_ASSERT(0 == midiRecorder.mEvents[17]);
-    TEST_ASSERT(PACK_EVENT(22, 23, 30, 68) == midiRecorder.mEvents[18]);
+    TEST_ASSERT(MR_PACK_EVENT(22, 23, 30, 68) == midiRecorder.mEvents[18]);
 }
 
 void testHangingNoteOnsInPlaybackMode()
@@ -1481,8 +1481,8 @@ void testHangingNoteOnsInPlaybackMode()
     }
     TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(1 == midiRecorder.mNbEvents);
-    TEST_ASSERT(GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
-    TEST_ASSERT(GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
+    TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
+    TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
     TEST_ASSERT(1<<10 == midiRecorder.out0);
 
     //First frame of playback should close the hanging note.
@@ -1492,8 +1492,8 @@ void testHangingNoteOnsInPlaybackMode()
     }
     TEST_ASSERT(4 == midiRecorder.mPhase);
     TEST_ASSERT(1 == midiRecorder.mNbEvents);
-    TEST_ASSERT(GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
-    TEST_ASSERT(GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
+    TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
+    TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
     TEST_ASSERT(0 == midiRecorder.out0);
 
     //Run through playback.
@@ -1546,8 +1546,8 @@ void testHangingNoteOnsInStoppedMode()
     }
     TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(1 == midiRecorder.mNbEvents);
-    TEST_ASSERT(GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
-    TEST_ASSERT(GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 20);
+    TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
+    TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 20);
     TEST_ASSERT(0<<10 == midiRecorder.out0);
 
     //Run through playback.
@@ -1669,8 +1669,8 @@ void testPlaybackQuantisationA()
 
         for(int32_t i = 0; i < 6; i++)
         {
-            const uint32_t onClock = GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
-            const uint32_t offClock = GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
+            const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
+            const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
             const uint32_t duration = offClock - onClock;
             TEST_ASSERT(onClock == expectedOns[q][i])
             TEST_ASSERT(duration == expectedDurations[q][i])
@@ -1764,8 +1764,8 @@ void testPlaybackQuantisationB()
 
         for(int32_t i = 0; i < 6; i++)
         {
-            const uint32_t onClock = GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
-            const uint32_t offClock = GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
+            const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
+            const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
             const uint32_t duration = offClock - onClock;
             TEST_ASSERT(onClock == expectedOns[q][i])
             TEST_ASSERT(duration == expectedDurations[q][i])
@@ -1836,8 +1836,8 @@ void testOutputSaturationFromQuantisationA()
 
     for(int32_t i = 0; i < 7; i++)
     {
-        const uint32_t onClock = GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
-        const uint32_t offClock = GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
+        const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
+        const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
         const uint32_t duration = offClock - onClock;
         TEST_ASSERT(onClock == expectedOns[i]);
         TEST_ASSERT(duration == expectedDurations[i]);
@@ -1908,10 +1908,10 @@ void testOutputSaturationFromQuantisationB()
 
     for(int32_t i = 0; i < 7; i++)
     {
-        const uint32_t onClock = GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
-        const uint32_t offClock = GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
+        const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
+        const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
         const uint32_t duration = offClock - onClock;
-        const uint32_t noteNr = GET_NOTE_NR(outputStream.mSortedEvents[i]);
+        const uint32_t noteNr = MR_GET_NOTE_NR(outputStream.mSortedEvents[i]);
         TEST_ASSERT(onClock == expectedOns[i]);
         TEST_ASSERT(duration == expectedDurations[i]);
         TEST_ASSERT(noteNr == expectedNoteNrs[i]);
@@ -1979,6 +1979,8 @@ void testOutputSaturationFromQuantisationC()
 
 void testMidiRecorder()
 {
+    printf("MidiRecorder is %d bytes \n", sizeof(struct MidiRecorder));
+
     testMacros();
 
     //Test phase transitions based on

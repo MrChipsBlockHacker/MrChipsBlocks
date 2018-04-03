@@ -70,6 +70,10 @@ struct MidiRecorder
 
 void tickMidiRecorder(struct MidiRecorder* data)
 {
+    //**********************************************
+    //Patchblock code starts here
+    //**********************************************
+
     //////////////////
     //Note
     /////////////////
@@ -87,25 +91,35 @@ void tickMidiRecorder(struct MidiRecorder* data)
     //7 bits for note number
     //7 bits for velocity
 
-    #define PACK_EVENT(on, off, note, vel)      ((on) | ((off) << 9) | ((note) << 18) | (vel) << 25)
+    //Pack note on clock, note off clock, note number and velocity into 32 bits.
+    #define MR_PACK_EVENT(on, off, note, vel)      ((on) | ((off) << 9) | ((note) << 18) | (vel) << 25)
 
-    #define INC_NOTE_ON_CLOCK(e, inc)           ((e) + (inc))
+    //Increment the note-on clock value. inc can be +ve or -ve.
+    #define MR_INC_NOTE_ON_CLOCK(e, inc)           ((e) + (inc))
 
-    #define INC_NOTE_OFF_CLOCK(e, inc)          ((e) + ((inc) << 9))
+    //Increment the note-off clock value. inc can be +ve or -ve.
+    #define MR_INC_NOTE_OFF_CLOCK(e, inc)          ((e) + ((inc) << 9))
 
-    #define GET_NOTE_ON_CLOCK(e)                ((e) & ((1 << 9) - 1))
+    //Get the note-on clock value in range (0,511)
+    #define MR_GET_NOTE_ON_CLOCK(e)                ((e) & ((1 << 9) - 1))
 
-    #define GET_NOTE_OFF_CLOCK(e)               (((e) >> 9) & ((1 << 9) - 1))
+    //Get the note-off clock value in range (0,511)
+    #define MR_GET_NOTE_OFF_CLOCK(e)               (((e) >> 9) & ((1 << 9) - 1))
 
-    #define GET_NOTE_NR(e)                      (((e) >> 18) & ((1 << 7) - 1))
+    //Get the note number value in range (0,127)
+    #define MR_GET_NOTE_NR(e)                      (((e) >> 18) & ((1 << 7) - 1))
 
-    #define GET_VELOCITY(e)                     (((e) >> 25) & ((1 << 7) - 1))
+    //Get the velocity value in range (0,127)
+    #define MR_GET_VELOCITY(e)                     (((e) >> 25) & ((1 << 7) - 1))
 
-    #define QUANTIZE_ON(e, q)                   (((((e) & ((1 << 9) - 1)) + (q)/2)/(q))*(q))
+    //Quantise the note-on clock to the specified quantisation.
+    #define MR_QUANTIZE_ON(e, q)                   (((((e) & ((1 << 9) - 1)) + (q)/2)/(q))*(q))
 
-    #define DURATION(e)                         ((((e) >> 9) & ((1 << 9) - 1)) -  ((e) & ((1 << 9) - 1)))
+    //Get the duration in midi clocks between note-on and note-off.
+    #define MR_DURATION(e)                         ((((e) >> 9) & ((1 << 9) - 1)) -  ((e) & ((1 << 9) - 1)))
 
-    #define QUANTIZE_OFF(e, q)                  (QUANTIZE_ON((e),(q)) + DURATION((e)))
+    //Compute the quantised note-on midi clock and return the note-off midi clock that preserves unquantised duration.
+    #define MR_QUANTIZE_OFF(e, q)                  (MR_QUANTIZE_ON((e),(q)) + MR_DURATION((e)))
 
     //****************************
 
@@ -300,7 +314,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                       //We are closer to clock 1 than clock 0
                       //Add one on to the note-on clock count.
                       const uint8_t eventId = data->mEventNoteOnsDuringClock[i];
-                      data->mEvents[eventId] = INC_NOTE_ON_CLOCK(data->mEvents[eventId], 1);
+                      data->mEvents[eventId] = MR_INC_NOTE_ON_CLOCK(data->mEvents[eventId], 1);
                   }
               }
 
@@ -313,16 +327,16 @@ void tickMidiRecorder(struct MidiRecorder* data)
                   const uint16_t tickCount = data->mEventNoteOffTickCountsDuringClock[i];
                   if((tickCounterAtClock1 - tickCount) < (tickCount - 0))
                   {
-                      data->mEvents[eventId] = INC_NOTE_OFF_CLOCK(data->mEvents[eventId], 1);
+                      data->mEvents[eventId] = MR_INC_NOTE_OFF_CLOCK(data->mEvents[eventId], 1);
                   }
 
                   //Now ensure a minimum duration of 1 clock.
                   const uint32_t event = data->mEvents[eventId];
-                  const uint32_t noteOffClockCount = GET_NOTE_OFF_CLOCK(event);
-                  const uint32_t noteOnClockCount = GET_NOTE_ON_CLOCK(event);
+                  const uint32_t noteOffClockCount = MR_GET_NOTE_OFF_CLOCK(event);
+                  const uint32_t noteOnClockCount = MR_GET_NOTE_ON_CLOCK(event);
                   if(noteOnClockCount == noteOffClockCount)
                   {
-                      data->mEvents[eventId] = INC_NOTE_OFF_CLOCK(data->mEvents[eventId], 1);
+                      data->mEvents[eventId] = MR_INC_NOTE_OFF_CLOCK(data->mEvents[eventId], 1);
                   }
               }
 
@@ -380,6 +394,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             for(uint32_t i = 0; i < maxNbOutputs; i++)
             {
                 *(midiGateOuts[i]) = 0;
+                data->mOpenEvents[i] = 0xff;
             }
         }
         else if(0 == data->mTickCounter)
@@ -392,7 +407,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 if(0xff != eventId)
                 {
                     const uint32_t openEvent = data->mEvents[eventId];
-                    const uint32_t openEventNoteOffClockCount = QUANTIZE_OFF(openEvent, quantisation);
+                    const uint32_t openEventNoteOffClockCount = MR_QUANTIZE_OFF(openEvent, quantisation);
                     if(openEventNoteOffClockCount == data->mMidiClockCount)
                     {
                         *(midiGateOuts[i]) = 0;
@@ -406,9 +421,9 @@ void tickMidiRecorder(struct MidiRecorder* data)
             //Handle all note events.
             //Unpack the current event with some bit swizzling.
             const uint32_t event = data->mEvents[data->mTide];
-            const uint32_t noteOnClockCount = QUANTIZE_ON(event, quantisation);
-            const uint32_t midiNoteNumber = GET_NOTE_NR(event);
-            const uint32_t midiVelocity = GET_VELOCITY(event);
+            const uint32_t noteOnClockCount = MR_QUANTIZE_ON(event, quantisation);
+            const uint32_t midiNoteNumber = MR_GET_NOTE_NR(event);
+            const uint32_t midiVelocity = MR_GET_VELOCITY(event);
 
             if(!event)
             {
@@ -455,7 +470,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                     {
                         const uint8_t candidateEventId = data->mOpenEvents[i];
                         const uint32_t candidateEvent = data->mEvents[candidateEventId];
-                        const uint32_t candidateNoteOnClockCount = QUANTIZE_ON(candidateEvent, quantisation);
+                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, quantisation);
                         if(candidateNoteOnClockCount < oldestNoteOnClockCount)
                         {
                             oldestOpenEventId = i;
@@ -464,8 +479,8 @@ void tickMidiRecorder(struct MidiRecorder* data)
                         }
                         else if((oldestOpenEventId != 0xff) && (candidateNoteOnClockCount == oldestNoteOnClockCount))
                         {
-                            const uint32_t otherNoteNumber = GET_NOTE_NR(candidateEvent);
-                            const uint32_t oldestNoteNumber = GET_NOTE_NR(oldestEvent);
+                            const uint32_t otherNoteNumber = MR_GET_NOTE_NR(candidateEvent);
+                            const uint32_t oldestNoteNumber = MR_GET_NOTE_NR(oldestEvent);
                             if(otherNoteNumber < oldestNoteNumber)
                             {
                                 oldestOpenEventId = i;
@@ -553,7 +568,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
 
                     data->mOpenEvents[i] = data->mNbEvents;
 
-                    data->mEvents[data->mNbEvents] = PACK_EVENT(data->mMidiClockCount, 0, midiNoteIn, midiVelocityIn);
+                    data->mEvents[data->mNbEvents] = MR_PACK_EVENT(data->mMidiClockCount, 0, midiNoteIn, midiVelocityIn);
                     data->mNbEvents++;
                 }
             }
@@ -575,7 +590,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
 
                     data->mOpenEvents[i] = 0xff;
 
-                    data->mEvents[eventId] = INC_NOTE_OFF_CLOCK(data->mEvents[eventId], data->mMidiClockCount);
+                    data->mEvents[eventId] = MR_INC_NOTE_OFF_CLOCK(data->mEvents[eventId], data->mMidiClockCount);
                 }
                 else
                 {
@@ -608,6 +623,10 @@ void tickMidiRecorder(struct MidiRecorder* data)
             *(midiVelOuts[i]) = midiVelIns[i];
         }
     }
+
+    //**********************************************
+    //Patchblock code ends here
+    //**********************************************
 }
 
 #endif // MIDIRECORDER_H_INCLUDED

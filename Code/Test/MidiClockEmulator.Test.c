@@ -10,4 +10,6 @@
 
 void testMidiClockEmulator()
 {
+    printf("MidiClockEmulator is %d bytes \n", sizeof(struct MidiClockEmulator));
+
 }
