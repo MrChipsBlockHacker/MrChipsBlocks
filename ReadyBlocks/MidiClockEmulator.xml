@@ -1,0 +1,123 @@
+<block name="Midi_Clock_Emulator">
+	<category>MidiTools</category>
+	<info></info>
+	<data name="d_midi_clock_emulator">
+		<variable socket="in" info="ClockIn" value="0"/>
+		<variable socket="in" info="StartStopIn" value="0"/>
+		<variable socket="out" info="ClockOut" />
+		<variable socket="out" info="StartStopOut" />
+		<variable dtype="uint32_t" name="mBPM" editable="1" value="120" info="Emulated beats per minute"/>
+		<variable dtype="uint32_t" name="mClockPulseWidth" editable="1" value="0.1" info="Emulated clock pulse width"/>
+		<variable dtype="uint32_t" name="mPhase" editable="0" value="0"/>
+		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
+	</data>
+	<function name="f_midi_clock_emulator">
+	<![CDATA[
+
+#ifdef	EMULATOR
+//#define _DEBUG           /* Uncomment this line to enable debugging */
+#ifdef 	_DEBUG
+#define MAXDBG	160	
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+FILE *_dbgfile = NULL;
+#define dbg(_fmt, ...) {												\
+	char path[255];														\
+	snprintf(path, 255, "%s\\%s.txt", getenv("HOMEPATH"), __func__);	\
+	time_t _time;														\
+	struct tm *_tm;														\
+	time(&_time);														\
+	_tm = localtime(&_time);											\
+	char _fmtbuf[MAXDBG];												\
+	sprintf(_fmtbuf, "Time: %s", asctime(_tm));							\
+	size_t timeBufLength = strlen(_fmtbuf);								\
+	sprintf(_fmtbuf + timeBufLength, _fmt, ##__VA_ARGS__);				\
+	if(strcmp(data->_lastdbg, _fmtbuf)) {								\
+		_dbgfile = fopen(path, "a");									\
+		fprintf(_dbgfile, _fmtbuf);	 									\
+		fflush(_dbgfile);												\
+		strcpy(data->_lastdbg, _fmtbuf);}}	
+#else //_DEBUG
+#define dbg(_fmt, ...)
+#endif //_DEBUG
+#else
+#define dbg(_fmt, ...)
+#endif //EMULATOR
+		
+		
+// ---------- Your code here:  ---------- //
+
+#ifndef EMULATOR
+
+    //Route straight to the output.
+    data->out0 = *data.in0;
+    data->out1 = *data.in1;
+
+#else
+
+    #define MCE_MULTIPLY(a, b, n) ((((a)*(b)) + (1 << ((n)-1))) >> (n))
+    #define MCE_DIVIDE(a, b, n) (((a) << (n))/(b))
+
+    //Clocks per second computed with standard 10 fractional bits.
+    const uint32_t nbBeatPerSecond = MCE_DIVIDE(data->mBPM, 60 << 10, 10);
+    const uint32_t nbClocksPerSecond = MCE_MULTIPLY(nbBeatPerSecond, 24 << 10, 10);
+
+    //Phase uses 17 fractional bits.
+    const uint32_t one17 = 1 << 17;
+    const uint32_t width17  = data->mClockPulseWidth << 7;
+    const uint32_t nbClocksPerSecond17 = nbClocksPerSecond << 7;
+
+    //Set the clock pulse to either +0.5 or -0.5
+    //Phase > 1 cycles back round to 0.
+    //Phase > 1-width generates 0.5f/on
+    //Phase <= 1-width generates -0.5f/off
+
+    if(data->mPhase > one17)
+    {
+        //+0.5
+        data->out0 = -511;
+
+        //Subtract off 1.0
+        data->mPhase &= (one17 - 1);
+    }
+    else if(data->mPhase > (one17 - width17))
+    {
+        //+0.5
+        data->out0 = 511;
+    }
+    else
+    {
+        //-0.5
+        data->out0 = -511;
+    }
+
+    //Set the gate on.
+    data->out1 = 1 << 10;
+
+    //Change in phase per tick.
+    //Performed with 17 fractional bits.
+    data->mPhase += nbClocksPerSecond17/SMP_RATE;;
+
+
+#endif // EMULATOR
+	
+// ---------- End of your code ---------- //
+
+#ifdef EMULATOR
+#ifdef 	_DEBUG
+	if(_dbgfile) fclose(_dbgfile);
+#endif //_DEBUG
+#endif //EMULATOR
+#undef dbg 
+#undef MAXDBG
+#undef _DEBUG
+
+	]]>
+	</function>
+	<help>
+	<![CDATA[
+<p>Midi Recorder</p> 
+	]]>
+	</help>
+</block>

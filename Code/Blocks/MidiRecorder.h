@@ -47,6 +47,7 @@ struct MidiRecorder
     int32_t out15;   //midi gate
     int32_t out16;   //midi note
     int32_t out17;   //midi velocity
+    int32_t out18;   //metronome clock pulse.
 
     //Editable input.
     uint32_t mNbCountInClocks;     //Editable input
@@ -155,6 +156,9 @@ void tickMidiRecorder(struct MidiRecorder* data)
     int32_t* const midiNoteOuts[6] = {&data->out1,&data->out4,&data->out7,&data->out10, &data->out13,&data->out16};
     int32_t* const midiVelOuts[7] = {&data->out2,&data->out5,&data->out8,&data->out11, &data->out14,&data->out17};
 
+    //Store the metronome clock output.
+    int32_t* const metronomeClockOut = &data->out18;
+
     //Unpack the midi clock data.
     const int32_t midiClockTrigger = *data->in18;
     const int32_t midiStart = *data->in19;
@@ -178,6 +182,11 @@ void tickMidiRecorder(struct MidiRecorder* data)
     //Must be using something pre-C99.
     uint32_t i;
 
+    //Clock out is for metronome so we want that to be off
+    //unless we are in record or record count-in phases.
+    //Set this on later if we encounter the correct conditions.
+    *metronomeClockOut = -511;
+
     //Let's start the update code.
     //If midiStart is off then reset everything to zero and return.
     if (0 == midiStart)
@@ -197,10 +206,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
         data->mTickCounter = 0;
 
         //Set all open events to available.
-        for(i = 0; i < maxNbOpenEvents; i++)
-        {
-            data->mOpenEvents[i] = 0xff;
-        }
+        memset(data->mOpenEvents, 0xff, sizeof(data->mOpenEvents));
 
         //Route input to output.
         for(i = 0; i < maxNbInputs; i++)
@@ -300,10 +306,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 data->mPhase = ePhaseRecord;
 
                 //Set all events to zero before recording.
-                for (i = 0; i < maxNbEvents; i++)
-                {
-                   data->mEvents[i] = 0;
-                }
+                memset(data->mEvents, 0, sizeof(data->mEvents));
              }
           }
           else if (ePhaseRecord == data->mPhase)
@@ -384,6 +387,16 @@ void tickMidiRecorder(struct MidiRecorder* data)
     {
        //Trigger has gone negative, be ready to catch next crossing to positive.
        data->mMidiClockTriggerReady = 1;
+    }
+
+    //Set the output metronome clock.
+    if((ePhaseRecordCountIn == data->mPhase || ePhaseRecord == data->mPhase) && (0 == data->mTickCounter) && (0 == (data->mMidiClockCount % quantisation)))
+    {
+        //We are waiting to record or recording (phase)
+        //We just got  a midi clock (tick counter)
+        //We are on the correct beat.
+        //Set the metronome clock pulse.
+        *metronomeClockOut = 511;
     }
 
     //Process the phase.

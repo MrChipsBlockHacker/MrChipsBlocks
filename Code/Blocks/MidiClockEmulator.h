@@ -5,12 +5,13 @@
 
 struct MidiClockEmulator
 {
-    int32_t* in0; //bpm
-    int32_t* in1;//gate
-    int32_t* in2; //clockpulse;
+    int32_t* in0;           //clock pulse
+    int32_t* in1;           //start/stop
+    int32_t out0;           //clock pulse
+    int32_t out1;           //start/stop
+    uint32_t mBPM;
+    uint32_t mClockPulseWidth;
     uint32_t mPhase;
-    int32_t out0;//clock pulse value
-    int32_t out1;//start/stop
 };
 
 void tickMidiClockEmulator(struct MidiClockEmulator* data)
@@ -22,53 +23,54 @@ void tickMidiClockEmulator(struct MidiClockEmulator* data)
 #ifndef EMULATOR
 
     //Route straight to the output.
-    data->out0 = data.in0;
-    data->out1 = data.in1;
+    data->out0 = *data.in0;
+    data->out1 = *data.in1;
 
 #else
 
+    #define MCE_MULTIPLY(a, b, n) ((((a)*(b)) + (1 << ((n)-1))) >> (n))
+    #define MCE_DIVIDE(a, b, n) (((a) << (n))/(b))
+
     //Clocks per second computed with standard 10 fractional bits.
-    const uint32_t nbBeatPerMinute = (uint32_t)(*data->in0);
-    const uint32_t nbBeatPerSecond = divide(nbBeatPerMinute, (60 << 10), 10);
-    const uint32_t nbClocksPerSecond = multiply(nbBeatPerSecond, (24 << 10), 10);
+    const uint32_t nbBeatPerSecond = MCE_DIVIDE(data->mBPM, 60 << 10, 10);
+    const uint32_t nbClocksPerSecond = MCE_MULTIPLY(nbBeatPerSecond, 24 << 10, 10);
+
+    //Phase uses 17 fractional bits.
+    const uint32_t one17 = 1 << 17;
+    const uint32_t width17  = data->mClockPulseWidth << 7;
+    const uint32_t nbClocksPerSecond17 = nbClocksPerSecond << 7;
 
     //Set the clock pulse to either +0.5 or -0.5
-    //How many samples should clock pulse be on?
-    //I have no idea so I'll just assume it is on only for a single tick.
-    //Requires all logic in subsequent blocks to identify the single tick of a zero crossing.
-    //Does that break anything?
-    //SMP_RATE can have two values: 100 or 20000
-    //If we tick this at 100 then every subsequent block ticked at 20000 will pick up the zero crossing.
-    //If we tick this at 100 then every subsequent block ticked at 100 will pick up the zero crossing
-    //assuming they are all ticked in phase.
-    //If we tick this at 20000 then every subsequent block ticked at 100 will most likely miss the zero crossing.
-    //If we tick this at 20000 then every subsequent block ticked at 20000 will pick up the zero crossing.
-    //What have we learnt?
-    //Subsequent blocks must be ticked at the same rate as this block or at a higher rate than this block.
-    //Note: phase uses 20 fractional bits.
-    if(data->mPhase > (1 << 20))
-    {
-       //+0.5
-       data->out0 = 511;
+    //Phase > 1 cycles back round to 0.
+    //Phase > 1-width generates 0.5f/on
+    //Phase <= 1-width generates -0.5f/off
 
-       //Subtract off 1.0
-       data->mPhase &= ((1 << 20) - 1);
+    if(data->mPhase > one17)
+    {
+        //+0.5
+        data->out0 = -511;
+
+        //Subtract off 1.0
+        data->mPhase &= (one17 - 1);
+    }
+    else if(data->mPhase > (one17 - width17))
+    {
+        //+0.5
+        data->out0 = 511;
     }
     else
     {
-       //-0.5
-       data->out0 = -511;
+        //-0.5
+        data->out0 = -511;
     }
 
-    //Set the gate.
-    data->out1 = *data->in1;
+    //Set the gate on.
+    data->out1 = 1 << 10;
 
     //Change in phase per tick.
-    //Performed with 20 fractional bits.
-    //nbClocksPerSecond must be less than 4096 (2^12) to avoid overflow.
-    //120bpm results in a value of 48 so we are fine up to 10k bpm.
-    const uint32_t deltaPhase = multiply((nbClocksPerSecond << 10), ((1 << 20) / (20000)), 20);
-    data->mPhase += deltaPhase;
+    //Performed with 17 fractional bits.
+    data->mPhase += nbClocksPerSecond17/SMP_RATE;;
+
 
 #endif // EMULATOR
 
