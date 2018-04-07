@@ -49,10 +49,12 @@ struct MidiRecorder
     int32_t out17;   //midi velocity
     int32_t out18;   //metronome clock pulse.
 
+
     //Editable input.
     uint32_t mNbCountInClocks;     //Editable input
     uint32_t mNbRecordClocks;      //Editable input
     uint32_t mQuantisation;         //Editable input
+    uint32_t mMetronomeQuantisation;//Editable input.
 
     //Internal data.
     uint8_t mEventNoteOnsDuringClock[12];                    //2 for each input
@@ -168,7 +170,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     const uint8_t nbCountInClocks = data->mNbCountInClocks >> 10;
     const uint8_t nbRecordClocks = data->mNbRecordClocks >> 10;
     const uint8_t quantisation = data->mQuantisation >> 10;
-
+    const uint8_t metronomeQuantisation = data->mMetronomeQuantisation >> 10;
 
     //Compute the max size of all the buffers that we will use.
     const uint8_t maxNbInputs = sizeof(midiGateIns)/sizeof(int32_t);
@@ -390,13 +392,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
     }
 
     //Set the output metronome clock.
-    if((ePhaseRecordCountIn == data->mPhase || ePhaseRecord == data->mPhase) && (0 == data->mTickCounter) && (0 == (data->mMidiClockCount % quantisation)))
+    //Remember that we already set it to -511 at the start of the function.
+    if((ePhaseRecordCountIn == data->mPhase || ePhaseRecord == data->mPhase) && (0 == (data->mMidiClockCount % metronomeQuantisation)))
     {
-        //We are waiting to record or recording (phase)
-        //We just got  a midi clock (tick counter)
+        //We are in record count-in phase or recording phase.
         //We are on the correct beat.
-        //Set the metronome clock pulse.
-        *metronomeClockOut = 511;
+        //Set the metronome clock pulse to be the input pulse.
+        *metronomeClockOut = midiClockTrigger;
     }
 
     //Process the phase.

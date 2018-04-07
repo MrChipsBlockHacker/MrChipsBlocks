@@ -45,6 +45,7 @@
 		<variable dtype="uint32_t" name="mNbCountInClocks" editable="1" value="96" info="NumRecordCountInMidiClocks"/>
 		<variable dtype="uint32_t" name="mNbRecordClocks" editable="1" value="96" info="NumLoopMidiClocks"/>
 		<variable dtype="uint32_t" name="mQuantisation" editable="1" value="6" info="PlaybackQuantisation"/>
+		<variable dtype="uint32_t" name="mMetronomeQuantisation" editable="1" value="24" info="MetronomeQuantisation"/>		
 		<variable dtype="uint8_t" name="mEventNoteOnsDuringClock[12]" editable="0" value="{ 0 }" />
 		<variable dtype="uint8_t" name="mEventNoteOffsDuringClock[12]" editable="0" value="{ 0 }"/>
 		<variable dtype="uint16_t" name="mEventNoteOnTickCountsDuringClock[12]" editable="0" value="{ 0 }" />
@@ -189,7 +190,7 @@ FILE *_dbgfile = NULL;
     const uint8_t nbCountInClocks = data->mNbCountInClocks >> 10;
     const uint8_t nbRecordClocks = data->mNbRecordClocks >> 10;
     const uint8_t quantisation = data->mQuantisation >> 10;
-
+    const uint8_t metronomeQuantisation = data->mMetronomeQuantisation >> 10;
 
     //Compute the max size of all the buffers that we will use.
     const uint8_t maxNbInputs = sizeof(midiGateIns)/sizeof(int32_t);
@@ -411,13 +412,13 @@ FILE *_dbgfile = NULL;
     }
 
     //Set the output metronome clock.
-    if((ePhaseRecordCountIn == data->mPhase || ePhaseRecord == data->mPhase) && (0 == data->mTickCounter) && (0 == (data->mMidiClockCount % quantisation)))
+    //Remember that we already set it to -511 at the start of the function.
+    if((ePhaseRecordCountIn == data->mPhase || ePhaseRecord == data->mPhase) && (0 == (data->mMidiClockCount % metronomeQuantisation)))
     {
-        //We are waiting to record or recording (phase)
-        //We just got  a midi clock (tick counter)
+        //We are in record count-in phase or recording phase.
         //We are on the correct beat.
-        //Set the metronome clock pulse.
-        *metronomeClockOut = 511;
+        //Set the metronome clock pulse to be the input pulse.
+        *metronomeClockOut = midiClockTrigger;
     }
 
     //Process the phase.
@@ -665,7 +666,7 @@ FILE *_dbgfile = NULL;
             *(midiVelOuts[i]) = midiVelIns[i];
         }
     }
-	
+
 // ---------- End of your code ---------- //
 
 #ifdef EMULATOR
