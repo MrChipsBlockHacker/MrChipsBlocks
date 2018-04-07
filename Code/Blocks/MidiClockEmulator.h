@@ -44,11 +44,12 @@ void tickMidiClockEmulator(struct MidiClockEmulator* data)
     //Phase > 1 cycles back round to 0.
     //Phase > 1-width generates 0.5f/on
     //Phase <= 1-width generates -0.5f/off
+    //A width of 0 generates on for a single tick.
 
     if(data->mPhase > one17)
     {
         //+0.5
-        data->out0 = -511;
+        data->out0 = 511;
 
         //Subtract off 1.0
         data->mPhase &= (one17 - 1);
@@ -69,7 +70,7 @@ void tickMidiClockEmulator(struct MidiClockEmulator* data)
 
     //Change in phase per tick.
     //Performed with 17 fractional bits.
-    data->mPhase += nbClocksPerSecond17/SMP_RATE;;
+    data->mPhase += nbClocksPerSecond17/SMP_RATE;
 
 
 #endif // EMULATOR

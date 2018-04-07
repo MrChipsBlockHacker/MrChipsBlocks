@@ -13,6 +13,7 @@
 	</data>
 	<function name="f_midi_clock_emulator">
 	<![CDATA[
+	
 
 #ifdef	EMULATOR
 //#define _DEBUG           /* Uncomment this line to enable debugging */
@@ -72,11 +73,12 @@ FILE *_dbgfile = NULL;
     //Phase > 1 cycles back round to 0.
     //Phase > 1-width generates 0.5f/on
     //Phase <= 1-width generates -0.5f/off
+    //A width of 0 generates on for a single tick.
 
     if(data->mPhase > one17)
     {
         //+0.5
-        data->out0 = -511;
+        data->out0 = 511;
 
         //Subtract off 1.0
         data->mPhase &= (one17 - 1);

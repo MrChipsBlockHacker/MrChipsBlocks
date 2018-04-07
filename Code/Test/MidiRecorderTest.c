@@ -2119,8 +2119,9 @@ void testMidiRecorder()
     // ie on and off in clock N, on and off in clock N + 1
     testConsectutiveOnOffEvents();
 
-    //Test note-ons and note-offs in last midi clock of loop ie
-    //Test that note-ons quantised to end of loop are lost.
+    //Test note-ons and note-offs in last midi clock of loop.
+    //Test metronome clock output
+    //Test multiple on/offs in single clock result in multiple outputs in single clock.
 }
 
 

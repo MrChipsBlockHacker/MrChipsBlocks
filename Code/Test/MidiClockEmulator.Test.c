@@ -72,7 +72,9 @@ void testBPM(const float beatsPerMinute, const float testTimeInSeconds, const fl
         }
     }
 
-    const float ratio = (float)numOnTicks/(float)(numOnTicks + numOffTicks);
+    //Note that the gate is on for the width but also for an extra
+    //tick each clock when the phase is greater than 1.0.
+    const float ratio = (float)(numOnTicks-numClocks)/(float)(numOnTicks + numOffTicks);
     TEST_ASSERT(fabsf(ratio - width) < 0.001f);
 
     TEST_ASSERT(numClocks == nbClocksInTestTime);
