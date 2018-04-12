@@ -1345,9 +1345,11 @@ void testMidiClockQuantisation()
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
         TEST_ASSERT(3 == midiRecorder.mPhase);
-        TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(2 == midiRecorder.mNbEvents);
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[1]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[1]));
     }
 
     //An on event early in midi clock count 15, off late in midi clock count 16
@@ -1368,9 +1370,13 @@ void testMidiClockQuantisation()
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
         TEST_ASSERT(3 == midiRecorder.mPhase);
-        TEST_ASSERT(1 == midiRecorder.mNbEvents);
+        TEST_ASSERT(3 == midiRecorder.mNbEvents);
         TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[1]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[1]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[2]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[2]));
     }
 
     //An on event late in midi clock count 15, off early in midi clock count 16
@@ -1392,9 +1398,15 @@ void testMidiClockQuantisation()
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
         TEST_ASSERT(3 == midiRecorder.mPhase);
-        TEST_ASSERT(1 == midiRecorder.mNbEvents);
-        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
-        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(4 == midiRecorder.mNbEvents);
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(16 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
+        TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[1]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[1]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[2]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[2]));
+        TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[3]));
+        TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[3]));
     }
 }
 
@@ -1741,7 +1753,7 @@ void testHangingNoteOnsInPlaybackMode()
     const uint32_t recordEnd = recordStart + test.mNbRecordClocks*clockPeriod;
     const uint32_t playbackEnd = recordEnd + test.mNbRecordClocks*clockPeriod;
 
-    //A note that never ends.
+    //A note that ends after the loop ends.
     struct MidiNoteInputEvent e0 = {12, 50, recordStart + 1*clockPeriod + 1, recordStart + test.mNbRecordClocks*clockPeriod + 10, 0};
     test.mNoteEvents[0] = e0;
     test.mNbNoteEvents = 1;
@@ -1760,7 +1772,7 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
     TEST_ASSERT(1<<10 == midiRecorder.out0);
 
-    //First frame of next record loop should close the hanging note.
+    //Should remain on after looping round because only playback events are truncated.
     for(uint32_t i = recordEnd; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
@@ -1768,8 +1780,9 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(1 == midiRecorder.mNbEvents);
     TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
-    TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
-    TEST_ASSERT(0 == midiRecorder.out0);
+    TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == test.mNbRecordClocks);
+    TEST_ASSERT(1<<10 == midiRecorder.out0);
+
 
     //Run through one more record loop to play back recorded events.
     //Should end with hanging note.
@@ -1781,7 +1794,7 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(1<<10 == midiRecorder.out0);
     TEST_ASSERT(12<<10 == midiRecorder.out1);
     TEST_ASSERT(50<<3 == midiRecorder.out2);
-    TEST_ASSERT(2 == midiRecorder.mNbEvents);
+    TEST_ASSERT(1 == midiRecorder.mNbEvents);
 
     //First tick of next record loop should close the hanging note.
     for(uint32_t i = playbackEnd; i < playbackEnd+1; i++)
@@ -1793,15 +1806,7 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(50<<3 == midiRecorder.out2);
     TEST_ASSERT(0 == midiRecorder.mTide);
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
-    TEST_ASSERT(2 == midiRecorder.mNbEvents);
-
-    //Loop a few more record loops so that we fill up the events.
-    //with multiple events of same note all starting on clock 0.
-    //Test that we only play back 1 of these events and ignore the
-    //rest.
-    //Either that or work out how to deal with note-ons that straddle over
-    //the record loop boundary.
-    //blahblah
+    TEST_ASSERT(1 == midiRecorder.mNbEvents);
 }
 
 void testHangingNoteOnsInStoppedMode()
@@ -2192,16 +2197,29 @@ void testOutputSaturationFromQuantisationB()
     uint32_t expectedDurations[7] = {15, 12, 8, 8, 8, 8, 8};
     uint32_t expectedNoteNrs[7] ={11, 10, 20, 21, 22, 23, 24};
 
-    for(int32_t i = 0; i < 7; i++)
+    //Search through for the expected note numbers
+    uint32_t count = 0;
+    for(uint32_t i = 0; i < 7; i++)
     {
-        const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[i]);
-        const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[i]);
-        const uint32_t duration = offClock - onClock;
-        const uint32_t noteNr = MR_GET_NOTE_NR(outputStream.mSortedEvents[i]);
-        TEST_ASSERT(onClock == expectedOns[i]);
-        TEST_ASSERT(duration == expectedDurations[i]);
-        TEST_ASSERT(noteNr == expectedNoteNrs[i]);
+        const uint32_t notei = expectedNoteNrs[i];
+
+        for(uint32_t j = 0; j < 7; j++)
+        {
+            const uint32_t notej = MR_GET_NOTE_NR(outputStream.mSortedEvents[j]);
+
+            if(notei == notej)
+            {
+                const uint32_t onClock = MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[j]);
+                const uint32_t offClock = MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[j]);
+                const uint32_t duration = offClock - onClock;
+                TEST_ASSERT(onClock == expectedOns[i]);
+                TEST_ASSERT(duration == expectedDurations[i]);
+                count++;
+                break;
+            }
+        }
     }
+    TEST_ASSERT(7 == count);
 }
 
 void testOutputSaturationFromQuantisationC()
@@ -2449,7 +2467,6 @@ void testMidiRecorder()
     //Test we don't crash if we record more than 32 events in a loop.
     testEventLimit();
 
-    /*
     //Test hanging ons are cleared on next loop in playback mode.
     testHangingNoteOnsInPlaybackMode();
     //Test hanging ons are cleared in stopped mode.
@@ -2470,7 +2487,6 @@ void testMidiRecorder()
 
     //Test the metronome clock output.
     testMetronomeClockOutput();
-    */
 
     //Test note-ons and note-offs in last midi clock of loop.
     //Test metronome clock output

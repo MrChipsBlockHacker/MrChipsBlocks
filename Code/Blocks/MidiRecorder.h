@@ -61,7 +61,7 @@ struct MidiRecorder
     //Inputs and outputs.
     //Only zero these on first tick.
     uint8_t mInputToOutputMap[6];                           //Destination output channel of each input channel.
-    uint8_t mUsedOutputChannels;                            //8 bits to record used/free status of each output, 1 bit for each output.
+    uint8_t mOutputChannelMask;                            //8 bits to record used/free status of each output, 1 bit for each output.
     uint8_t mFirstTickComplete;
 
     //Record and playback events in-flight.
@@ -230,23 +230,29 @@ void tickMidiRecorder(struct MidiRecorder* data)
     //Set this on later if we encounter the correct conditions.
     *metronomeClockOut = -511;
 
+    //Cache the previous phase so we can track state changes.
+    const uint8_t prevPhase = data->mPhase;
+
     //Let's start the update code.
     //If midiStart is off then reset everything to zero.
     if (0 == midiStart)
     {
         if(0 == data->mFirstTickComplete)
         {
+            //Only wipe on very first tick.
+            //Ideally, we'd do this in a constructor but I don't know how
+            //patchblocks initialises data.
+            //I couldn't get struct member variables to initialise to anything other than zero from xml.
             memset(data->mInputToOutputMap, UNUSED_ID, sizeof(data->mInputToOutputMap));
-            data->mUsedOutputChannels = 0;
+            data->mOutputChannelMask = 0;
+            memset(data->mInputRecordEventIds, UNUSED_ID, sizeof(data->mInputRecordEventIds));
+            memset(data->mOutputPlaybackEventIds,  UNUSED_ID, sizeof(data->mOutputPlaybackEventIds));
+            memset(data->mEvents, 0, sizeof(data->mEvents));
+            data->mNbEvents = 0;
             data->mFirstTickComplete = 1;
         }
 
-        memset(data->mInputRecordEventIds, UNUSED_ID, sizeof(data->mInputRecordEventIds));
-        memset(data->mOutputPlaybackEventIds,  UNUSED_ID, sizeof(data->mOutputPlaybackEventIds));
-
-        memset(data->mEvents, 0, sizeof(data->mEvents));
-        data->mNbEventsPrev = 0;
-        data->mNbEvents = 0;
+        data->mNbEventsPrev = data->mNbEvents;
 
         data->mMidiClockTriggerReady = 0;
         data->mMidiClockCount = 0;
@@ -328,6 +334,17 @@ void tickMidiRecorder(struct MidiRecorder* data)
     //We will need to sort the events if that is the case.
     if((rewindToStart != 0) && (eOperationalModeRecord == data->mOperationalMode))
     {
+        //Any hanging notes that were just recorded need to be truncated.
+        for(uint8_t inputCounter = 0; inputCounter < maxNbInputs; inputCounter++)
+        {
+            const uint8_t recordEventId = data->mInputRecordEventIds[inputCounter];
+            if(UNUSED_ID != recordEventId)
+            {
+                const uint8_t recordEventId = data->mInputRecordEventIds[inputCounter];
+                data->mEvents[recordEventId] = MR_INC_NOTE_OFF_CLOCK(data->mEvents[recordEventId], nbRecordClocks);
+            }
+        }
+
         //Sort all events recorded in the last loop with all events
         //recorded prior to last loop.
         if((data->mNbEvents > data->mNbEventsPrev) && (data->mNbEventsPrev > 0))
@@ -389,6 +406,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     uint8_t nbNoteOnInputChannels = 0;
     uint8_t noteOffInputChannels[maxNbInputs];
     uint8_t nbNoteOffInputChannels = 0;
+    uint8_t noteOnInputChannelMask = 0;
     for(inputCounter = 0; inputCounter < maxNbInputs; inputCounter++)
     {
         const uint32_t gateIn = midiGateIns[inputCounter] >> 10;
@@ -397,6 +415,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
         if(gateIn && (UNUSED_ID == cachedOutputChannelId))
         {
             //Note-on event.
+            noteOnInputChannelMask = MR_SET_CHANNEL_USED(noteOnInputChannelMask, inputCounter);
             noteOnInputChannels[nbNoteOnInputChannels] = inputCounter;
             nbNoteOnInputChannels++;
         }
@@ -432,6 +451,29 @@ void tickMidiRecorder(struct MidiRecorder* data)
                 data->mEvents[data->mNbEvents] = MR_PACK_EVENT(noteOnClock, 0, noteNr, noteVel);
                 data->mInputRecordEventIds[inputChannelId] = data->mNbEvents;
                 data->mNbEvents++;
+            }
+        }
+
+        //If we just switched to record mode then record every input not picked up
+        //as an input state change.
+        if(prevPhase == ePhaseRecordCountIn)
+        {
+            for(inputCounter = 0; inputCounter < maxNbInputs; inputCounter++)
+            {
+                const uint32_t gateIn = midiGateIns[inputCounter] >> 10;
+                const uint8_t channelIsAlreadyManaged = MR_IS_CHANNEL_USED(noteOnInputChannelMask, inputCounter);
+                if((data->mNbEvents < maxNbEvents) && gateIn && !channelIsAlreadyManaged)
+                {
+                    //Get the note-on information.
+                    const uint32_t noteNr = midiNoteIns[inputCounter] >> 10;
+                    const uint32_t noteVel = midiVelIns[inputCounter] >> 3;
+
+                    //Cached the note-on event.
+                    //We know it is at clock 0.
+                    data->mEvents[data->mNbEvents] = MR_PACK_EVENT(0, 0, noteNr, noteVel);
+                    data->mInputRecordEventIds[inputCounter] = data->mNbEvents;
+                    data->mNbEvents++;
+                }
             }
         }
 
@@ -475,12 +517,12 @@ void tickMidiRecorder(struct MidiRecorder* data)
         const uint32_t inputChannelId = noteOnInputChannels[inputCounter];
 
         //Find an available output.
-        const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mUsedOutputChannels);
+        const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mOutputChannelMask);
 
         if(UNUSED_ID != freeOutputChannelId)
         {
             //Mark the output as used.
-            data->mUsedOutputChannels = MR_SET_CHANNEL_USED(data->mUsedOutputChannels, freeOutputChannelId);
+            data->mOutputChannelMask = MR_SET_CHANNEL_USED(data->mOutputChannelMask, freeOutputChannelId);
             data->mInputToOutputMap[inputChannelId] = freeOutputChannelId;
         }
         else
@@ -504,11 +546,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
                     {
                         oldestNoteOnClockCount = candidateNoteOnClockCount;
                         oldestOutputChannelId = outputCounter;
+                        oldestNoteOnNoteNr = candidateNoteNr;
+
                     }
                     else if((candidateNoteOnClockCount == oldestNoteOnClockCount) && (candidateNoteNr < oldestNoteOnNoteNr))
                     {
-                        oldestNoteOnNoteNr = candidateNoteNr;
                         oldestOutputChannelId = outputCounter;
+                        oldestNoteOnNoteNr = candidateNoteNr;
                     }
                 }
             }
@@ -545,12 +589,12 @@ void tickMidiRecorder(struct MidiRecorder* data)
         if(noteOnClockCount == data->mMidiClockCount)
         {
             //Find an available output channel from the channels used by playback.
-            const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mUsedOutputChannels);
+            const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mOutputChannelMask);
 
             if(UNUSED_ID != freeOutputChannelId)
             {
                 data->mOutputPlaybackEventIds[freeOutputChannelId] = data->mTide;
-                data->mUsedOutputChannels = MR_SET_CHANNEL_USED(data->mUsedOutputChannels, freeOutputChannelId);
+                data->mOutputChannelMask = MR_SET_CHANNEL_USED(data->mOutputChannelMask, freeOutputChannelId);
                 data->mTide++;
             }
             else
@@ -573,20 +617,21 @@ void tickMidiRecorder(struct MidiRecorder* data)
                         {
                             oldestNoteOnClockCount = candidateNoteOnClockCount;
                             oldestOutputChannelId = outputCounter;
+                            oldestNoteOnNoteNr = candidateNoteNr;
                         }
                         else if((candidateNoteOnClockCount == oldestNoteOnClockCount) && (candidateNoteNr < oldestNoteOnNoteNr))
                         {
-                            oldestNoteOnNoteNr = candidateNoteNr;
                             oldestOutputChannelId = outputCounter;
+                            oldestNoteOnNoteNr = candidateNoteNr;
                         }
                     }
                 }
 
-                if(oldestOutputChannelId != UNUSED_ID)
+                if((oldestOutputChannelId != UNUSED_ID) && (oldestNoteOnClockCount < noteOnClockCount))
                 {
                     //We found a playback event that we can stop.
                     //Mark it and stop it later on.
-                    data->mEvents[oldestOutputChannelId] = MARKED_FOR_REMOVE;
+                    data->mOutputPlaybackEventIds[oldestOutputChannelId] = MARKED_FOR_REMOVE;
                 }
                 else
                 {
@@ -602,6 +647,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     }
 
     //Iterate over all open playback events and mark any that are due to stop on this midi clock.
+    //Mark any hanging notes for stop as well in both playback and stopped mode.
     if(ePhaseActive == data->mPhase)
     {
         for(outputCounter = 0; outputCounter < maxNbOutputs;  outputCounter++)
@@ -611,15 +657,26 @@ void tickMidiRecorder(struct MidiRecorder* data)
             {
                 const uint32_t  playbackEvent = data->mEvents[playbackEventId];
                 const uint16_t noteOffClockCount = MR_QUANTIZE_OFF(playbackEvent, quantisation);
-                if(noteOffClockCount == data->mMidiClockCount)
+                if((noteOffClockCount == data->mMidiClockCount) || rewindToStart)
                 {
                     data->mOutputPlaybackEventIds[outputCounter] = MARKED_FOR_REMOVE;
                 }
             }
         }
     }
+    else if((ePhaseStopped == data->mPhase) && (ePhaseActive == prevPhase))
+    {
+        for(outputCounter = 0; outputCounter < maxNbOutputs;  outputCounter++)
+        {
+            const uint32_t playbackEventId = data->mOutputPlaybackEventIds[outputCounter];
+            if(UNUSED_ID != playbackEventId && MARKED_FOR_REMOVE != playbackEventId)
+            {
+                data->mOutputPlaybackEventIds[outputCounter] = MARKED_FOR_REMOVE;
+            }
+        }
+    }
 
-    if(ePhaseActive == data->mPhase)
+    if(ePhaseActive == data->mPhase || ((ePhaseStopped == data->mPhase) && (ePhaseActive == prevPhase)))
     {
         //Iterate over all playback events that are due to stop and actually stop them.
         //Iterate over all active playback events and route them to the output.
@@ -629,7 +686,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             if(MARKED_FOR_REMOVE == playbackEventId)
             {
                 *midiGateOuts[outputCounter] = 0;
-                data->mUsedOutputChannels = MR_SET_CHANNEL_FREE(data->mUsedOutputChannels, outputCounter);
+                data->mOutputChannelMask = MR_SET_CHANNEL_FREE(data->mOutputChannelMask, outputCounter);
                 data->mOutputPlaybackEventIds[outputCounter] = UNUSED_ID;
             }
             else if(UNUSED_ID != playbackEventId)
@@ -642,14 +699,14 @@ void tickMidiRecorder(struct MidiRecorder* data)
         }
     }
 
-    //Iterate over all live note-off events and stop them.
+    //Iterate over all live note-off events and clear the output.
     for(inputCounter = 0; inputCounter < nbNoteOffInputChannels; inputCounter++)
     {
         const uint8_t inputChannelId = noteOffInputChannels[inputCounter];
         const uint8_t outputChannelId = data->mInputToOutputMap[inputChannelId];
 
         data->mInputToOutputMap[inputChannelId] = UNUSED_ID;
-        data->mUsedOutputChannels = MR_SET_CHANNEL_FREE(data->mUsedOutputChannels, inputChannelId);
+        data->mOutputChannelMask = MR_SET_CHANNEL_FREE(data->mOutputChannelMask, outputChannelId);
 
         *midiGateOuts[outputChannelId] = 0;
     }
