@@ -112,6 +112,122 @@ void testMacros()
         TEST_ASSERT(MR_GET_NOTE_NR(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 60);
         TEST_ASSERT(MR_GET_VELOCITY(MR_PACK_EVENT(48 + 3, 55, 60, 100)) == 100);
     }
+
+    //Test set and freeing output channels.
+     {
+        uint8_t e = 0;
+        e = MR_SET_CHANNEL_USED(e, 1);
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 0));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 1));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 2));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 3));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 4));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 5));
+
+        e = MR_SET_CHANNEL_USED(e, 1);
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 0));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 1));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 2));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 3));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 4));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 5));
+
+        e = MR_SET_CHANNEL_FREE(e, 1);
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 0));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 1));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 2));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 3));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 4));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 5));
+
+        e = MR_SET_CHANNEL_USED(e, 2);
+        e = MR_SET_CHANNEL_USED(e, 4);
+        e = MR_SET_CHANNEL_USED(e, 5);
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 0));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 1));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 2));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 3));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 4));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 5));
+
+        e = MR_SET_CHANNEL_FREE(e, 4);
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 0));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 1));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 2));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 3));
+        TEST_ASSERT(0 == MR_IS_CHANNEL_USED(e, 4));
+        TEST_ASSERT(1 == MR_IS_CHANNEL_USED(e, 5));
+    }
+
+    /*
+    //test finding a free output channel.
+    {
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(0));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(1));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(2));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(3));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(4));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(5));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(6));
+        TEST_ASSERT(3 == MR_LOWEST_FREE_BIT(7));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(8));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(9));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(10));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(11));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(12));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(13));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(14));
+        TEST_ASSERT(4 == MR_LOWEST_FREE_BIT(15));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(16));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(17));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(18));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(19));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(20));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(21));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(22));
+        TEST_ASSERT(3 == MR_LOWEST_FREE_BIT(23));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(24));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(25));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(26));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(27));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(28));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(29));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(30));
+        TEST_ASSERT(5 == MR_LOWEST_FREE_BIT(31));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(32));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(33));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(34));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(35));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(36));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(37));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(38));
+        TEST_ASSERT(3 == MR_LOWEST_FREE_BIT(39));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(40));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(41));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(42));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(43));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(44));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(45));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(46));
+        TEST_ASSERT(4 == MR_LOWEST_FREE_BIT(47));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(48));
+        TEST_ASSERT(1== MR_LOWEST_FREE_BIT(49));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(50));
+        TEST_ASSERT(2 == MR_LOWEST_FREE_BIT(51));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(52));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(53));
+        TEST_ASSERT(0== MR_LOWEST_FREE_BIT(54));
+        TEST_ASSERT(3 == MR_LOWEST_FREE_BIT(55));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(56));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(57));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(58));
+        TEST_ASSERT(2== MR_LOWEST_FREE_BIT(59));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(60));
+        TEST_ASSERT(1 == MR_LOWEST_FREE_BIT(61));
+        TEST_ASSERT(0 == MR_LOWEST_FREE_BIT(62));
+        TEST_ASSERT(0xff == MR_LOWEST_FREE_BIT(63));
+    }
+    */
 }
 
 struct MidiNoteInputEvent
@@ -135,7 +251,7 @@ struct MidiRecorderTestData
     uint32_t mClockStopTick;
 
     //Config data.
-    int32_t mOperationalMode;
+    int32_t mIsRecordingArmed;
     int32_t mNbCountInClocks;
     int32_t mNbRecordClocks;
     int32_t mQuantisation;
@@ -168,7 +284,7 @@ void initialiseTest(struct MidiRecorderTestData* test)
     test->mClockStartTick = 912;
     test->mClockStopTick = 0xffffffff;
 
-    test->mOperationalMode = 1;
+    test->mIsRecordingArmed = 1;
     test->mNbCountInClocks = 96;
     test->mNbRecordClocks = 48;
     test->mQuantisation = 1;
@@ -210,16 +326,7 @@ void sortStream(struct MidiRecorderOutputStream* stream)
 
 void initialiseMidiRecorder(struct MidiRecorderTestData* testData, struct MidiRecorder* midiRecorder)
 {
-    midiRecorder->mNbEventNoteOnsDuringClock = 0;
-    midiRecorder->mNbEventNoteOffsDuringClock = 0;
-    midiRecorder->mNbOpenEvents = 0;
-    midiRecorder->mNbEvents = 0;
-    midiRecorder->mMidiClockTriggerReady = 0;
-    midiRecorder->mMidiClockCount = 0;
-    midiRecorder->mPhase = 0;
-    midiRecorder->mTide= 0;
-    midiRecorder->mTickCounter = 0;
-    midiRecorder->mNbEvents = 0;
+    memset(midiRecorder, 0, sizeof(struct MidiRecorder));
 
     //Set the int32_t pointers to a buffer.
     midiRecorder->in0 = testData->mBuffer + 0;
@@ -245,7 +352,6 @@ void initialiseMidiRecorder(struct MidiRecorderTestData* testData, struct MidiRe
     midiRecorder->in20 = testData->mBuffer + 20;
 
     //Set the configuration data.
-    *midiRecorder->in20 = testData->mOperationalMode << 10;
     midiRecorder->mNbCountInClocks = testData->mNbCountInClocks << 10;
     midiRecorder->mNbRecordClocks = testData->mNbRecordClocks << 10;
     midiRecorder->mQuantisation = testData->mQuantisation << 10;
@@ -257,7 +363,7 @@ void tickMidiRecorderTest
  struct MidiRecorderTestData* testData, struct MidiRecorder* midiRecorder, struct MidiRecorderOutputStream* stream)
 {
     //Set the configuration data.
-    *midiRecorder->in20 = testData->mOperationalMode << 10;
+    *midiRecorder->in20 = testData->mIsRecordingArmed << 10;
     midiRecorder->mNbCountInClocks = testData->mNbCountInClocks << 10;
     midiRecorder->mNbRecordClocks = testData->mNbRecordClocks << 10;
     midiRecorder->mQuantisation = testData->mQuantisation << 10;
@@ -283,6 +389,8 @@ void tickMidiRecorderTest
     }
 
     //Start and stop notes.
+    uint32_t nbNoteOns = 0;
+    uint32_t nbNoteOffs = 0;
     for(uint32_t i = 0; i < testData->mNbNoteEvents; i++)
     {
         struct MidiNoteInputEvent noteEvent = testData->mNoteEvents[i];
@@ -290,66 +398,90 @@ void tickMidiRecorderTest
         {
             if(0 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in0);
                 *midiRecorder->in0 = 1 << 10;
                 *midiRecorder->in1 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in2 = noteEvent.mMidiVelocity << 3;
+                nbNoteOns++;
             }
             else if(1 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in3);
                 *midiRecorder->in3 = 1 << 10;
                 *midiRecorder->in4 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in5 = noteEvent.mMidiVelocity << 3;
+                 nbNoteOns++;
             }
             else if(2 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in6);
                 *midiRecorder->in6 = 1 << 10;
                 *midiRecorder->in7 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in8 = noteEvent.mMidiVelocity << 3;
+                nbNoteOns++;
             }
             else if(3 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in9);
                 *midiRecorder->in9 = 1 << 10;
                 *midiRecorder->in10 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in11 = noteEvent.mMidiVelocity << 3;
+                nbNoteOns++;
             }
             else if(4 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in12);
                 *midiRecorder->in12 = 1 << 10;
                 *midiRecorder->in13 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in14 = noteEvent.mMidiVelocity << 3;
+                nbNoteOns++;
             }
             else if(5 == noteEvent.mInput)
             {
+                TEST_ASSERT(0 == *midiRecorder->in15);
                 *midiRecorder->in15 = 1 << 10;
                 *midiRecorder->in16 = noteEvent.mMidiNote << 10;
                 *midiRecorder->in17 = noteEvent.mMidiVelocity << 3;
+                nbNoteOns++;
             }
         }
         else if(noteEvent.mTickCountOff == tickCount)
         {
             if(0 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in0);
                 *midiRecorder->in0 = 0;
+                nbNoteOffs++;
             }
             else if(1 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in3);
                 *midiRecorder->in3 = 0;
+                nbNoteOffs++;
             }
             else if(2 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in6);
                 *midiRecorder->in6 = 0;
+                nbNoteOffs++;
             }
             else if(3 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in9);
                 *midiRecorder->in9 = 0;
+                nbNoteOffs++;
             }
             else if(4 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in12);
                 *midiRecorder->in12 = 0;
+                nbNoteOffs++;
             }
             else if(5 == noteEvent.mInput)
             {
+                TEST_ASSERT(1 <<10 == *midiRecorder->in15);
                 *midiRecorder->in15 = 0;
+                nbNoteOffs++;
             }
         }
     }
@@ -493,7 +625,7 @@ void testPhaseTranstionWaitingToCountIn()
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
 }
 
-void testPhaseTranstionRecordCountInToRecord()
+void testPhaseTranstionRecordCountInToActive()
 {
     struct MidiRecorderTestData test;
     initialiseTest(&test);
@@ -537,7 +669,7 @@ void testPhaseTranstionRecordCountInToRecord()
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
 }
 
-void testPhaseTransitionRecordToPlayback()
+void testPhaseTransitionActiveToActive()
 {
     struct MidiRecorderTestData test;
     initialiseTest(&test);
@@ -594,71 +726,135 @@ void testPhaseTransitionRecordToPlayback()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
 }
 
-void testPhaseTransitionPlaybackToPlayback()
+void testPhaseTranstionWaitingToActive()
 {
     struct MidiRecorderTestData test;
     initialiseTest(&test);
+    test.mIsRecordingArmed = 0;
     struct MidiRecorder midiRecorder;
     initialiseMidiRecorder(&test, &midiRecorder);
 
     const uint32_t tickStart = test.mClockStartTick;
     const uint32_t clockPeriod = test.mClockPulseTickPeriod;
+
+    //Iterate to waiting.
+    for(uint32_t i = 0; i < tickStart + 1; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(1 == midiRecorder.mPhase);
+    TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+
+    //Iterate until just before the next clock.
     uint32_t nextClockAfterStart = clockPeriod*((tickStart + clockPeriod)/clockPeriod);
-
-    //Iterate to playback.
-    uint32_t start =  0;
-    uint32_t stop = (nextClockAfterStart + (test.mNbCountInClocks + test.mNbRecordClocks)*clockPeriod) + 1;
-    for(uint32_t i = start; i < stop; i++)
+    for(uint32_t i = tickStart + 1; i < nextClockAfterStart; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(1 == midiRecorder.mPhase);
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
 
-    //Iterate just before count.
-    start = stop;
-    stop = (nextClockAfterStart + (test.mNbCountInClocks + test.mNbRecordClocks + 1)*clockPeriod);
-    for(uint32_t i = start; i < stop; i++)
+    //Iterate over next clock.
+    for(uint32_t i = nextClockAfterStart; i < nextClockAfterStart + 1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
-    TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
-
-    //Iterate over count.
-    start = stop;
-    stop = (nextClockAfterStart + (test.mNbCountInClocks + test.mNbRecordClocks + 1)*clockPeriod + 1);
-    for(uint32_t i = start; i < stop; i++)
-    {
-        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-    }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
-    TEST_ASSERT(1 == midiRecorder.mMidiClockCount);
-
-    //Iterate to just before end of loop.
-    start = stop;
-    stop = (nextClockAfterStart + (test.mNbCountInClocks + 2*test.mNbRecordClocks)*clockPeriod);
-    for(uint32_t i = start; i < stop; i++)
-    {
-        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-    }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
-    TEST_ASSERT((test.mNbRecordClocks-1) == midiRecorder.mMidiClockCount);
-
-    //Iterate over end of loop to start of loop.
-    start = stop;
-    stop = (nextClockAfterStart + (test.mNbCountInClocks + 2*test.mNbRecordClocks)*clockPeriod) + 1;
-    for(uint32_t i = start; i < stop; i++)
-    {
-        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-    }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
 }
+
+void testArmRecording()
+{
+    {
+        struct MidiRecorderTestData test;
+        initialiseTest(&test);
+        test.mIsRecordingArmed = 0;
+        struct MidiRecorder midiRecorder;
+        initialiseMidiRecorder(&test, &midiRecorder);
+
+        const uint32_t tickStart = test.mClockStartTick;
+        const uint32_t clockPeriod = test.mClockPulseTickPeriod;
+
+        //Iterate to waiting.
+        for(uint32_t i = 0; i < tickStart + 1; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(1 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(0 == midiRecorder.mOperationalMode);
+
+        //Set the armed flag to true.
+        test.mIsRecordingArmed = 1;
+
+        //Iterate until just before the next clock.
+        uint32_t nextClockAfterStart = clockPeriod*((tickStart + clockPeriod)/clockPeriod);
+        for(uint32_t i = tickStart + 1; i < nextClockAfterStart; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(1 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(0 == midiRecorder.mOperationalMode);
+
+        //Iterate over next clock.
+        for(uint32_t i = nextClockAfterStart; i < nextClockAfterStart + 1; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(3 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(0 == midiRecorder.mOperationalMode);
+    }
+
+    {
+        struct MidiRecorderTestData test;
+        initialiseTest(&test);
+        test.mIsRecordingArmed = 1;
+        struct MidiRecorder midiRecorder;
+        initialiseMidiRecorder(&test, &midiRecorder);
+
+        const uint32_t tickStart = test.mClockStartTick;
+        const uint32_t clockPeriod = test.mClockPulseTickPeriod;
+
+        //Iterate to waiting.
+        for(uint32_t i = 0; i < tickStart + 1; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(1 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(1 == midiRecorder.mOperationalMode);
+
+        //Set the armed flag to false.
+        test.mIsRecordingArmed = 0;
+
+        //Iterate until just before the next clock.
+        uint32_t nextClockAfterStart = clockPeriod*((tickStart + clockPeriod)/clockPeriod);
+        for(uint32_t i = tickStart + 1; i < nextClockAfterStart; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(1 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(1 == midiRecorder.mOperationalMode);
+
+        //Iterate over next clock.
+        for(uint32_t i = nextClockAfterStart; i < nextClockAfterStart + 1; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+        }
+        TEST_ASSERT(2 == midiRecorder.mPhase);
+        TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+        TEST_ASSERT(1 == midiRecorder.mOperationalMode);
+    }
+
+}
+
 
 void testInputRoutesToOutputPhaseStopped()
 {
@@ -782,7 +978,9 @@ void testInputRoutesToOutputPhaseStopped()
     for(uint32_t i = 6000; i < 7000; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out0);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
+        TEST_ASSERT(65<<10 == midiRecorder.out1);
+        TEST_ASSERT(25<<3 == midiRecorder.out2);
         TEST_ASSERT(0 == midiRecorder.out3);
         TEST_ASSERT(1<<10 == midiRecorder.out6);
         TEST_ASSERT(62<<10 == midiRecorder.out7);
@@ -793,15 +991,15 @@ void testInputRoutesToOutputPhaseStopped()
         TEST_ASSERT(1<<10 == midiRecorder.out12);
         TEST_ASSERT(64<<10 == midiRecorder.out13);
         TEST_ASSERT(24<<3 == midiRecorder.out14);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
-        TEST_ASSERT(65<<10 == midiRecorder.out16);
-        TEST_ASSERT(25<<3 == midiRecorder.out17);
+        TEST_ASSERT(0 == midiRecorder.out15);
     }
 
     for(uint32_t i = 7000; i < 8000; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out0);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
+        TEST_ASSERT(65<<10 == midiRecorder.out1);
+        TEST_ASSERT(25<<3 == midiRecorder.out2);
         TEST_ASSERT(0 == midiRecorder.out3);
         TEST_ASSERT(0 == midiRecorder.out6);
         TEST_ASSERT(1<<10 == midiRecorder.out9);
@@ -810,37 +1008,35 @@ void testInputRoutesToOutputPhaseStopped()
         TEST_ASSERT(1<<10 == midiRecorder.out12);
         TEST_ASSERT(64<<10 == midiRecorder.out13);
         TEST_ASSERT(24<<3 == midiRecorder.out14);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
-        TEST_ASSERT(65<<10 == midiRecorder.out16);
-        TEST_ASSERT(25<<3 == midiRecorder.out17);
+        TEST_ASSERT(0 == midiRecorder.out15);
     }
 
     for(uint32_t i = 8000; i < 9000; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out0);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
+        TEST_ASSERT(65<<10 == midiRecorder.out1);
+        TEST_ASSERT(25<<3 == midiRecorder.out2);
         TEST_ASSERT(0 == midiRecorder.out3);
         TEST_ASSERT(0 == midiRecorder.out6);
         TEST_ASSERT(0 == midiRecorder.out9);
         TEST_ASSERT(1<<10 == midiRecorder.out12);
         TEST_ASSERT(64<<10 == midiRecorder.out13);
         TEST_ASSERT(24<<3 == midiRecorder.out14);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
-        TEST_ASSERT(65<<10 == midiRecorder.out16);
-        TEST_ASSERT(25<<3 == midiRecorder.out17);
+        TEST_ASSERT(0 == midiRecorder.out15);
     }
 
     for(uint32_t i = 9000; i < 10000; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out0);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
+        TEST_ASSERT(65<<10 == midiRecorder.out1);
+        TEST_ASSERT(25<<3 == midiRecorder.out2);
         TEST_ASSERT(0 == midiRecorder.out3);
         TEST_ASSERT(0 == midiRecorder.out6);
         TEST_ASSERT(0 == midiRecorder.out9);
         TEST_ASSERT(0 == midiRecorder.out12);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
-        TEST_ASSERT(65<<10 == midiRecorder.out16);
-        TEST_ASSERT(25<<3 == midiRecorder.out17);
+        TEST_ASSERT(0 == midiRecorder.out15);
     }
 
     for(uint32_t i = 10000; i < 11000; i++)
@@ -875,31 +1071,33 @@ void testInputRoutesToOutputPhaseWaiting()
     for(uint32_t i = 0; i < e0.mTickCountOn; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out15);
+        TEST_ASSERT(0 == midiRecorder.out0);
         TEST_ASSERT(0 == midiRecorder.mPhase);
     }
     for(uint32_t i = e0.mTickCountOn; i < midiStartTick; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
         TEST_ASSERT(0 == midiRecorder.mPhase);
     }
     for(uint32_t i = midiStartTick; i < midiStartTick+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
         TEST_ASSERT(1 == midiRecorder.mPhase);
     }
     for(uint32_t i = midiStartTick+1; i < e0.mTickCountOff; i++)
     {
+        //First tick of record.
+        //All outputs are wiped.
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(1<<10 == midiRecorder.out15);
+        TEST_ASSERT(1<<10 == midiRecorder.out0);
         TEST_ASSERT(1 == midiRecorder.mPhase);
     }
     for(uint32_t i = e0.mTickCountOff; i < e0.mTickCountOff+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
-        TEST_ASSERT(0 == midiRecorder.out15);
+        TEST_ASSERT(0 == midiRecorder.out0);
         TEST_ASSERT(1 == midiRecorder.mPhase);
     }
 }
@@ -925,35 +1123,35 @@ void testInputRoutesToOutputPhaseCountin()
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(0 == midiRecorder.mPhase);
-    TEST_ASSERT(0 == midiRecorder.out9);
+    TEST_ASSERT(0 == midiRecorder.out0);
 
     for(uint32_t i = e0.mTickCountOn; i < e0.mTickCountOn+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(0 == midiRecorder.mPhase);
-    TEST_ASSERT(1<<10 == midiRecorder.out9);
-    TEST_ASSERT(60<<10 == midiRecorder.out10);
-    TEST_ASSERT(20<<3 == midiRecorder.out11);
+    TEST_ASSERT(1<<10 == midiRecorder.out0);
+    TEST_ASSERT(60<<10 == midiRecorder.out1);
+    TEST_ASSERT(20<<3 == midiRecorder.out2);
 
     for(uint32_t i = e0.mTickCountOn+1; i < e0.mTickCountOff; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(2 == midiRecorder.mPhase);
-    TEST_ASSERT(1<<10 == midiRecorder.out9);
-    TEST_ASSERT(60<<10 == midiRecorder.out10);
-    TEST_ASSERT(20<<3 == midiRecorder.out11);
+    TEST_ASSERT(1<<10 == midiRecorder.out0);
+    TEST_ASSERT(60<<10 == midiRecorder.out1);
+    TEST_ASSERT(20<<3 == midiRecorder.out2);
 
     for(uint32_t i = e0.mTickCountOff; i < e0.mTickCountOff+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(2 == midiRecorder.mPhase);
-    TEST_ASSERT(0 == midiRecorder.out9);
+    TEST_ASSERT(0 == midiRecorder.out0);
 }
 
-void testInputRoutesToOutputPhaseRecord()
+void testInputRoutesToOutputPhaseActive()
 {
     struct MidiRecorderTestData test;
     initialiseTest(&test);
@@ -974,45 +1172,123 @@ void testInputRoutesToOutputPhaseRecord()
     test.mNoteEvents[1] = e1;
     test.mNbNoteEvents = 2;
 
+    //Priod to recording inputs should map to outputs.
     for(uint32_t i = 0; i < midiStartTick; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(0 == midiRecorder.mPhase);
-    TEST_ASSERT(1 << 10 == midiRecorder.out9);
-    TEST_ASSERT(60 << 10 == midiRecorder.out10);
-    TEST_ASSERT(20 << 3 == midiRecorder.out11);
-    TEST_ASSERT(0 << 10 == midiRecorder.out12);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(0 << 10 == midiRecorder.out3);
 
-    for(uint32_t i = midiStartTick; i < recordStart+101; i++)
+    //Prior to recording all inputs should map to outputs.
+    for(uint32_t i = midiStartTick; i < recordStart; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(2 == midiRecorder.mPhase);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(0 << 10 == midiRecorder.out3);
+
+    //Outputs should persist after starting recording.
+    for(uint32_t i = recordStart; i < recordStart+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(3 == midiRecorder.mPhase);
-    TEST_ASSERT(1 << 10 == midiRecorder.out9);
-    TEST_ASSERT(60 << 10 == midiRecorder.out10);
-    TEST_ASSERT(20 << 3 == midiRecorder.out11);
-    TEST_ASSERT(1 << 10 == midiRecorder.out12);
-    TEST_ASSERT(61 << 10 == midiRecorder.out13);
-    TEST_ASSERT(21 << 3 == midiRecorder.out14);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(0 << 10 == midiRecorder.out3);
 
-    for(uint32_t i = recordStart+101; i < recordStart+201; i++)
+    //Iterate until just before note-on event e1
+    //On tick 0 of record we should pick up the note e0
+    //that started before recording started.
+    //e0 should be routed to first available output ie 0
+    for(uint32_t i = recordStart+1; i < e1.mTickCountOn; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(3 == midiRecorder.mPhase);
-    TEST_ASSERT(0 << 10 == midiRecorder.out9);
-    TEST_ASSERT(1 << 10 == midiRecorder.out12);
-    TEST_ASSERT(61 << 10 == midiRecorder.out13);
-    TEST_ASSERT(21 << 3 == midiRecorder.out14);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(0 == midiRecorder.out3);
 
-    for(uint32_t i = recordStart+201; i < recordEnd-5000+1; i++)
+    //Iterate until just before note-on event e1 is issued.
+    //Outputs written to in order as they become available
+    //ie e0 to 0 and e1 to 1.
+    for(uint32_t i = e1.mTickCountOn; i < e1.mTickCountOn+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
     TEST_ASSERT(3 == midiRecorder.mPhase);
-    TEST_ASSERT(0 << 10 == midiRecorder.out9);
-    TEST_ASSERT(0 << 10 == midiRecorder.out12);
+    TEST_ASSERT(0 == midiRecorder.out9);
+    TEST_ASSERT(0 == midiRecorder.out12);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(1 << 10 == midiRecorder.out3);
+    TEST_ASSERT(61 << 10 == midiRecorder.out4);
+    TEST_ASSERT(21 << 3 == midiRecorder.out5);
+
+    //Iterate until just before note-off event e0 is issued.
+    //Outputs written to in order as they become available
+    //ie e0 to 0 and e1 to 1.
+    for(uint32_t i = e1.mTickCountOn+1; i < e0.mTickCountOff; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(3 == midiRecorder.mPhase);
+    TEST_ASSERT(0 == midiRecorder.out9);
+    TEST_ASSERT(0 == midiRecorder.out12);
+    TEST_ASSERT(1 << 10 == midiRecorder.out0);
+    TEST_ASSERT(60 << 10 == midiRecorder.out1);
+    TEST_ASSERT(20 << 3 == midiRecorder.out2);
+    TEST_ASSERT(1 << 10 == midiRecorder.out3);
+    TEST_ASSERT(61 << 10 == midiRecorder.out4);
+    TEST_ASSERT(21 << 3 == midiRecorder.out5);
+
+    //Iterate until just after note-off event e0 is issued.
+    //Outputs written to in order as they become available
+    //ie e0 to 0 and e1 to 1.
+    for(uint32_t i = e0.mTickCountOff; i < e0.mTickCountOff+1; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(3 == midiRecorder.mPhase);
+    TEST_ASSERT(0 == midiRecorder.out0);
+    TEST_ASSERT(1 << 10 == midiRecorder.out3);
+    TEST_ASSERT(61 << 10 == midiRecorder.out4);
+    TEST_ASSERT(21 << 3 == midiRecorder.out5);
+
+    //Iterate until just before note-off event e1 is issued.
+    //Outputs written to in order as they become available
+    //ie e0 to 0 and e1 to 1.
+    for(uint32_t i = e0.mTickCountOff+1; i < e1.mTickCountOff; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(3 == midiRecorder.mPhase);
+    TEST_ASSERT(0 == midiRecorder.out0);
+    TEST_ASSERT(1 << 10 == midiRecorder.out3);
+    TEST_ASSERT(61 << 10 == midiRecorder.out4);
+    TEST_ASSERT(21 << 3 == midiRecorder.out5);
+
+    //Iterate until just after note-off event e1 is issued.
+    //Outputs written to in order as they become available
+    //ie e0 to 0 and e1 to 1.
+    for(uint32_t i = e1.mTickCountOff; i < e1.mTickCountOff+1; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(3 == midiRecorder.mPhase);
+    TEST_ASSERT(0 == midiRecorder.out0);
+    TEST_ASSERT(0 == midiRecorder.out3);
 }
 
 void testMidiClockQuantisation()
@@ -1040,12 +1316,12 @@ void testMidiClockQuantisation()
         test.mNoteEvents[0] = e0;
         test.mNbNoteEvents = 1;
 
-        //Iterate until we hit playback.
+        //Iterate until we cycle through 1 recording.
         for(uint32_t i = 0; i < (recordEnd + 1); i++)
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
         TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
         TEST_ASSERT(16 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
@@ -1063,12 +1339,12 @@ void testMidiClockQuantisation()
         test.mNoteEvents[0] = e0;
         test.mNbNoteEvents = 1;
 
-        //Iterate until we hit playback.
+        //Iterate until we cycle through 1 recording.
         for(uint32_t i = 0; i < (recordEnd + 1); i++)
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
         TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
         TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
@@ -1086,12 +1362,12 @@ void testMidiClockQuantisation()
         test.mNoteEvents[0] = e0;
         test.mNbNoteEvents = 1;
 
-        //Iterate until we hit playback.
+        //Iterate until we cycle through 1 recording.
         for(uint32_t i = 0; i < (recordEnd + 1); i++)
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
         TEST_ASSERT(15 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
         TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
@@ -1110,12 +1386,12 @@ void testMidiClockQuantisation()
         test.mNoteEvents[0] = e0;
         test.mNbNoteEvents = 1;
 
-        //Iterate until we hit playback.
+        //Iterate until we cycle through 1 recording.
         for(uint32_t i = 0; i < (recordEnd + 1); i++)
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(1 == midiRecorder.mNbEvents);
         TEST_ASSERT(16 == MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]));
         TEST_ASSERT(17 == MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]));
@@ -1155,12 +1431,12 @@ void testOverlappingConsecutiveChords()
     test.mNoteEvents[5] = e5;
     test.mNbNoteEvents = 6;
 
-    //Iterate until we hit playback.
+    //Iterate until we cycle through 1 recording.
     for(uint32_t i = 0; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(6 == midiRecorder.mNbEvents);
     TEST_ASSERT(midiRecorder.mEvents[0] == MR_PACK_EVENT(12, 21, 61, 21));
     TEST_ASSERT(midiRecorder.mEvents[1] == MR_PACK_EVENT(12, 21, 60, 20));
@@ -1226,12 +1502,12 @@ void testEventLimit()
     }
     test.mNbNoteEvents = 2*maxNbEvents;
 
-    //Iterate until we hit playback.
+    //Iterate until we cycle through 1 recording.
     for(uint32_t i = 0; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(maxNbEvents == midiRecorder.mNbEvents);
 
     TEST_ASSERT(MR_PACK_EVENT(0, 1, 12, 50) == midiRecorder.mEvents[0]);
@@ -1286,12 +1562,6 @@ void testNoteOnLimitPerClock()
     const uint32_t recordStart = nextClockAfterStart + test.mNbCountInClocks*clockPeriod;
     const uint32_t recordEnd = recordStart + test.mNbRecordClocks*clockPeriod;
 
-    //Check our test is testing the correct limits.
-    const uint32_t maxNbClockNoteOns = sizeof(midiRecorder.mEventNoteOnsDuringClock)/sizeof(uint8_t);
-    TEST_ASSERT(12 == maxNbClockNoteOns);
-    const uint32_t maxNbClockNoteOffs = sizeof(midiRecorder.mEventNoteOffsDuringClock)/sizeof(uint8_t);
-    TEST_ASSERT(12 == maxNbClockNoteOffs);
-
     //Issue 18 ons in same clock, 12 offs in same clock, 6 offs at later clocks.
     //6 note-ons and rapid note-offs.
     struct MidiNoteInputEvent e0 = {12, 50, recordStart + 2*clockPeriod + 1, recordStart + 2*clockPeriod + 10, 0};
@@ -1339,12 +1609,12 @@ void testNoteOnLimitPerClock()
     test.mNoteEvents[18] = e18;
     test.mNbNoteEvents = 19;
 
-    //Iterate until we hit playback.
+    //Iterate until we cycle through 1 recording.
     for(uint32_t i = 0; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(19 == midiRecorder.mNbEvents);
     TEST_ASSERT(MR_PACK_EVENT(2, 3, 12, 50) == midiRecorder.mEvents[0]);
     TEST_ASSERT(MR_PACK_EVENT(2, 3, 13, 51) == midiRecorder.mEvents[1]);
@@ -1379,10 +1649,6 @@ void testNoteOffLimitPerClock()
     const uint32_t nextClockAfterStart = clockPeriod*((midiStartTick + clockPeriod)/clockPeriod);
     const uint32_t recordStart = nextClockAfterStart + test.mNbCountInClocks*clockPeriod;
     const uint32_t recordEnd = recordStart + test.mNbRecordClocks*clockPeriod;
-
-    //Check our test is testing the correct limits.
-    const uint32_t maxNbClockNoteOffs = sizeof(midiRecorder.mEventNoteOffsDuringClock)/sizeof(uint8_t);
-    TEST_ASSERT(12 == maxNbClockNoteOffs);
 
     //6 end in same clock.
     struct MidiNoteInputEvent e0 = {12, 50, recordStart + 19*clockPeriod + 1, recordStart + 20*clockPeriod + 10, 0};
@@ -1432,12 +1698,12 @@ void testNoteOffLimitPerClock()
     test.mNoteEvents[18] = e18;
     test.mNbNoteEvents = 19;
 
-    //Iterate until we hit playback.
+    //Iterate until we cycle through 1 recording.
     for(uint32_t i = 0; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(19 == midiRecorder.mNbEvents);
 
     TEST_ASSERT(MR_PACK_EVENT(19, 20, 12, 50) == midiRecorder.mEvents[0]);
@@ -1494,19 +1760,20 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
     TEST_ASSERT(1<<10 == midiRecorder.out0);
 
-    //First frame of playback should close the hanging note.
+    //First frame of next record loop should close the hanging note.
     for(uint32_t i = recordEnd; i < (recordEnd + 1); i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(1 == midiRecorder.mNbEvents);
     TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(midiRecorder.mEvents[0]) == 1);
     TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(midiRecorder.mEvents[0]) == 0);
     TEST_ASSERT(0 == midiRecorder.out0);
 
-    //Run through playback.
-    //Should end playback with hanging note.
+    //Run through one more record loop to play back recorded events.
+    //Should end with hanging note.
+    //Should record one more event because we start the next record loop with a note-on.
     for(uint32_t i = recordEnd + 1; i < playbackEnd; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
@@ -1514,8 +1781,9 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(1<<10 == midiRecorder.out0);
     TEST_ASSERT(12<<10 == midiRecorder.out1);
     TEST_ASSERT(50<<3 == midiRecorder.out2);
+    TEST_ASSERT(2 == midiRecorder.mNbEvents);
 
-    //First tick of next playback should close the hanging note.
+    //First tick of next record loop should close the hanging note.
     for(uint32_t i = playbackEnd; i < playbackEnd+1; i++)
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
@@ -1525,6 +1793,15 @@ void testHangingNoteOnsInPlaybackMode()
     TEST_ASSERT(50<<3 == midiRecorder.out2);
     TEST_ASSERT(0 == midiRecorder.mTide);
     TEST_ASSERT(0 == midiRecorder.mMidiClockCount);
+    TEST_ASSERT(2 == midiRecorder.mNbEvents);
+
+    //Loop a few more record loops so that we fill up the events.
+    //with multiple events of same note all starting on clock 0.
+    //Test that we only play back 1 of these events and ignore the
+    //rest.
+    //Either that or work out how to deal with note-ons that straddle over
+    //the record loop boundary.
+    //blahblah
 }
 
 void testHangingNoteOnsInStoppedMode()
@@ -1565,7 +1842,7 @@ void testHangingNoteOnsInStoppedMode()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(0 == midiRecorder.out0);
     TEST_ASSERT(12<<10 == midiRecorder.out1);
     TEST_ASSERT(50<<3 == midiRecorder.out2);
@@ -1575,7 +1852,7 @@ void testHangingNoteOnsInStoppedMode()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(1<<10 == midiRecorder.out0);
     TEST_ASSERT(12<<10 == midiRecorder.out1);
     TEST_ASSERT(50<<3 == midiRecorder.out2);
@@ -1669,7 +1946,7 @@ void testPlaybackQuantisationA()
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(6 == midiRecorder.mNbEvents);
         TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -1764,7 +2041,7 @@ void testPlaybackQuantisationB()
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(6 == midiRecorder.mNbEvents);
         TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -1833,7 +2110,7 @@ void testOutputSaturationFromQuantisationA()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(7 == midiRecorder.mNbEvents);
     TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -1904,7 +2181,7 @@ void testOutputSaturationFromQuantisationB()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(7 == midiRecorder.mNbEvents);
     TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -1978,7 +2255,7 @@ void testOutputSaturationFromQuantisationC()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(7 == midiRecorder.mNbEvents);
     TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -2031,7 +2308,7 @@ void testConsectutiveOnOffEvents()
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(3 == midiRecorder.mNbEvents);
         TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -2061,7 +2338,7 @@ void testConsectutiveOnOffEvents()
         {
             tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
         }
-        TEST_ASSERT(4 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mPhase);
         TEST_ASSERT(3 == midiRecorder.mNbEvents);
         TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
 
@@ -2121,7 +2398,8 @@ void testMetronomeClockOutput()
     TEST_ASSERT(3 == midiRecorder.mNbEvents);
     TEST_ASSERT(12 == outputStream.mNbMetronomeClocks);
 
-    //Run through one playback.
+    //Run through one more loop in record mode.
+    //Should carry on emitting metronome clocks.
     const uint32_t start = recordEnd + test.mNbRecordClocks*clockPeriod;
     const uint32_t stop =start + test.mNbRecordClocks*clockPeriod;
     outputStream.mNbMetronomeClocks = 0;
@@ -2129,9 +2407,11 @@ void testMetronomeClockOutput()
     {
         tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
     }
-    TEST_ASSERT(4 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mPhase);
     TEST_ASSERT(3 == midiRecorder.mNbEvents);
-    TEST_ASSERT(0 == outputStream.mNbMetronomeClocks);
+    TEST_ASSERT(8 == outputStream.mNbMetronomeClocks);
+
+    //Disarm the
 }
 
 
@@ -2145,16 +2425,20 @@ void testMidiRecorder()
     //clock triggers and clock count thresholds.
     testPhaseTranstionStoppedToWaiting();
     testPhaseTranstionWaitingToCountIn();
-    testPhaseTranstionRecordCountInToRecord();
-    testPhaseTransitionRecordToPlayback();
-    testPhaseTransitionPlaybackToPlayback();
+    testPhaseTranstionRecordCountInToActive();
+    testPhaseTransitionActiveToActive();
+    testPhaseTranstionWaitingToActive();
+
+    //Test that arm recording input has no effect after
+    //switching to waiting.
+    testArmRecording();
 
     //Phases stopped, waiting, countin and record all
     //route input to output. Test this works.
     testInputRoutesToOutputPhaseStopped();
     testInputRoutesToOutputPhaseWaiting();
     testInputRoutesToOutputPhaseCountin();
-    testInputRoutesToOutputPhaseRecord();
+    testInputRoutesToOutputPhaseActive();
 
     //Test that we record notes to the correct clock quantisation.
     testMidiClockQuantisation();
@@ -2165,10 +2449,7 @@ void testMidiRecorder()
     //Test we don't crash if we record more than 32 events in a loop.
     testEventLimit();
 
-    //Test we don't crash if we issue more than N note-ons and note-offs per frame.
-    testNoteOnLimitPerClock();
-    testNoteOffLimitPerClock();
-
+    /*
     //Test hanging ons are cleared on next loop in playback mode.
     testHangingNoteOnsInPlaybackMode();
     //Test hanging ons are cleared in stopped mode.
@@ -2189,10 +2470,12 @@ void testMidiRecorder()
 
     //Test the metronome clock output.
     testMetronomeClockOutput();
+    */
 
     //Test note-ons and note-offs in last midi clock of loop.
     //Test metronome clock output
     //Test multiple on/offs in single clock result in multiple outputs in single clock.
+
 }
 
 
