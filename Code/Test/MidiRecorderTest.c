@@ -2341,7 +2341,8 @@ void testConsectutiveOnOffEvents()
         TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[0])==21);
         TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[1])==22);
         TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[2])==23);
-        TEST_ASSERT(3 == outputStream.mNb[0]);
+        TEST_ASSERT(2 == outputStream.mNb[0]);
+        TEST_ASSERT(1 == outputStream.mNb[1]);
     }
 
     {
@@ -2488,8 +2489,9 @@ void testMidiRecorder()
     //Test the metronome clock output.
     testMetronomeClockOutput();
 
+    //Test what happens when multiple events with same note nr are recorded.
+
     //Test note-ons and note-offs in last midi clock of loop.
-    //Test metronome clock output
     //Test multiple on/offs in single clock result in multiple outputs in single clock.
 
 }
