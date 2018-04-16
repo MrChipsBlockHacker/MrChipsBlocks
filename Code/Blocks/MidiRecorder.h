@@ -331,7 +331,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     }
 
     //Have we just wound back to the start in active mode with recording armed?
-    //We will need to sort the events if that is the case.
+    //We will need to sort the old and new events if that is the case.
     if((rewindToStart != 0) && (eOperationalModeRecord == data->mOperationalMode))
     {
         //Any hanging notes that were just recorded need to be truncated.
@@ -511,7 +511,8 @@ void tickMidiRecorder(struct MidiRecorder* data)
 
     //Process all the live note-on events by mapping them to the output.
     //If we can't map them to an available output then find the oldest
-    //playback output and mark it so we can stop it.
+    //playback output and mark it so we can stop it this tick and and
+    //hopefully have a free output channel next tick.
     for(inputCounter = 0; inputCounter < nbNoteOnInputChannels; inputCounter++)
     {
         const uint32_t inputChannelId = noteOnInputChannels[inputCounter];
@@ -531,6 +532,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
             //Find the oldest playback event and mark it to be stopped.
             //If there is a tie for oldest playback then choose the one with
             //the lowest note nr.
+            //We'll catch the event next tick.
             uint16_t oldestNoteOnClockCount = data->mMidiClockCount;
             uint8_t oldestNoteOnNoteNr = midiNoteIns[inputChannelId] >> 10;
             uint8_t oldestOutputChannelId = UNUSED_ID;
@@ -547,7 +549,6 @@ void tickMidiRecorder(struct MidiRecorder* data)
                         oldestNoteOnClockCount = candidateNoteOnClockCount;
                         oldestOutputChannelId = outputCounter;
                         oldestNoteOnNoteNr = candidateNoteNr;
-
                     }
                     else if((candidateNoteOnClockCount == oldestNoteOnClockCount) && (candidateNoteNr < oldestNoteOnNoteNr))
                     {
@@ -574,82 +575,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
         }
     }
 
-    //If we are in active mode then process playback of events recorded in previous loops.
-    //Route the note-on event to an output channel.
-    //If we can't do that then mark an output channel for stopping.
-    if((ePhaseActive == data->mPhase) && (data->mTide < data->mNbEventsPrev))
-    {
-        //Handle 1 note-on event.
-        //Unpack the current event with some bit swizzling.
-        const uint32_t event = data->mEvents[data->mTide];
-        const uint16_t noteOnClockCount = MR_QUANTIZE_ON(event, quantisation);
-        const uint8_t noteOnNoteNr = MR_GET_NOTE_NR(event);
-
-        //If the event should start then try to start it.
-        if(noteOnClockCount == data->mMidiClockCount)
-        {
-            //Find an available output channel from the channels used by playback.
-            const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mOutputChannelMask);
-
-            if(UNUSED_ID != freeOutputChannelId)
-            {
-                data->mOutputPlaybackEventIds[freeOutputChannelId] = data->mTide;
-                data->mOutputChannelMask = MR_SET_CHANNEL_USED(data->mOutputChannelMask, freeOutputChannelId);
-                data->mTide++;
-            }
-            else
-            {
-                //Find the oldest playback event and mark it to be stopped.
-                //If there is a tie for oldest playback then choose the one with
-                //the lowest note nr.
-                uint16_t oldestNoteOnClockCount = noteOnClockCount;
-                uint8_t oldestNoteOnNoteNr = noteOnNoteNr;
-                uint8_t oldestOutputChannelId = UNUSED_ID;
-                for(outputCounter = 0; outputCounter < maxNbOutputs; outputCounter++)
-                {
-                    const uint8_t candidateEventId = data->mOutputPlaybackEventIds[outputCounter];
-                    if((UNUSED_ID != candidateEventId) && (MARKED_FOR_REMOVE != candidateEventId))
-                    {
-                        const uint32_t candidateEvent = data->mEvents[candidateEventId];
-                        const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, quantisation);
-                        const uint32_t candidateNoteNr = MR_GET_NOTE_NR(candidateEvent);
-                        if(candidateNoteOnClockCount < oldestNoteOnClockCount)
-                        {
-                            oldestNoteOnClockCount = candidateNoteOnClockCount;
-                            oldestOutputChannelId = outputCounter;
-                            oldestNoteOnNoteNr = candidateNoteNr;
-                        }
-                        else if((candidateNoteOnClockCount == oldestNoteOnClockCount) && (candidateNoteNr < oldestNoteOnNoteNr))
-                        {
-                            oldestOutputChannelId = outputCounter;
-                            oldestNoteOnNoteNr = candidateNoteNr;
-                        }
-                    }
-                }
-
-                if((oldestOutputChannelId != UNUSED_ID) && (oldestNoteOnClockCount < noteOnClockCount))
-                {
-                    //We found a playback event that we can stop.
-                    //Mark it and stop it later on.
-                    data->mOutputPlaybackEventIds[oldestOutputChannelId] = MARKED_FOR_REMOVE;
-                }
-                else
-                {
-                    //We have saturated the output with simultaneous events.
-                    //We could stop the event with the lowest note number but that
-                    //would result in an output of just 1 tick duration.
-                    //We probably don't want that.
-                    //Better to just ignore the event completely and drop it.
-                    data->mTide++;
-                }
-            }
-        }
-    }
-
     //Iterate over all open playback events and mark any that are due to stop on this midi clock.
-    //Mark any hanging notes for stop as well in both playback and stopped mode.
+    //Mark note numbers already playing but due to stop.
+    uint32_t playbackToEndNoteMask[4];
     if(ePhaseActive == data->mPhase)
     {
+        memset(playbackToEndNoteMask, 0, sizeof(playbackToEndNoteMask));
+
         for(outputCounter = 0; outputCounter < maxNbOutputs;  outputCounter++)
         {
             const uint32_t playbackEventId = data->mOutputPlaybackEventIds[outputCounter];
@@ -657,9 +589,13 @@ void tickMidiRecorder(struct MidiRecorder* data)
             {
                 const uint32_t  playbackEvent = data->mEvents[playbackEventId];
                 const uint16_t noteOffClockCount = MR_QUANTIZE_OFF(playbackEvent, quantisation);
+
+                //If the note is due to end then mark it for remove.
                 if((noteOffClockCount == data->mMidiClockCount) || rewindToStart)
                 {
                     data->mOutputPlaybackEventIds[outputCounter] = MARKED_FOR_REMOVE;
+                    const uint16_t noteOffNr = MR_GET_NOTE_NR(playbackEvent);
+                    playbackToEndNoteMask[noteOffNr>>5] |= (1 << (noteOffNr&31));
                 }
             }
         }
@@ -676,10 +612,102 @@ void tickMidiRecorder(struct MidiRecorder* data)
         }
     }
 
+    //If we are in active mode then process playback of events recorded in previous loops.
+    //Route the note-on event to an output channel.
+    //If we can't do that then mark an playback output channel for stopping.
+    if((ePhaseActive == data->mPhase) && (data->mTide < data->mNbEventsPrev))
+    {
+        //Handle 1 note-on event.
+        //Unpack the current event with some bit swizzling.
+        const uint32_t event = data->mEvents[data->mTide];
+        const uint16_t noteOnClockCount = MR_QUANTIZE_ON(event, quantisation);
+        const uint8_t noteOnNoteNr = MR_GET_NOTE_NR(event);
+
+        //If the event should start then try to start it.
+        if(noteOnClockCount == data->mMidiClockCount)
+        {
+             //Are we already playing back this note?
+             //Are we already playing back the note but it is scheduled to end?
+             const uint32_t isNotePlayingAndDueToEnd = ((playbackToEndNoteMask[noteOnNoteNr>>5] >> (noteOnNoteNr&31)) & 1);
+
+             //a) If !isNoteBeingPlayedBackAlready we just trigger the note.
+             //b) If isNoteBeingPlayedBackAlready and isNoteMarkedForRemove then let the note
+             //end and retrigger it next tick.
+             //c) If isNoteBeingPlayedBackAlready and !isNoteMarkedForRemove we have a difficult
+             //choice to make.  What should we do?
+             //Should we set the end time of the note to be the largest end time?
+             //     No way, that would defeat our non-destructive requirement.
+            //Should we ignore the new note trigger?
+             //     No way, that would defeat our non-destructive requirement.
+            //Should we leave it for the user to merge the notes into one long note with a
+            //gather/distribution block and some logic merging to avoid a re-trigger?
+            //      Yes, let's pass this on to the user to decide what to do.
+            //Summary: issue the new note unless (isNoteBeingPlayedBackAlready && isNoteMarkedForRemove)
+             if(!isNotePlayingAndDueToEnd)
+             {
+                //Find an available output channel from the channels used by playback.
+                const uint8_t freeOutputChannelId = MR_LOWEST_FREE_BIT(data->mOutputChannelMask);
+
+                if(UNUSED_ID != freeOutputChannelId)
+                {
+                    data->mOutputPlaybackEventIds[freeOutputChannelId] = data->mTide;
+                    data->mOutputChannelMask = MR_SET_CHANNEL_USED(data->mOutputChannelMask, freeOutputChannelId);
+                    data->mTide++;
+                }
+                else
+                {
+                    //Find the oldest playback event and mark it to be stopped.
+                    //If there is a tie for oldest playback then choose the one with
+                    //the lowest note nr.
+                    uint16_t oldestNoteOnClockCount = noteOnClockCount;
+                    uint8_t oldestNoteOnNoteNr = noteOnNoteNr;
+                    uint8_t oldestOutputChannelId = UNUSED_ID;
+                    for(outputCounter = 0; outputCounter < maxNbOutputs; outputCounter++)
+                    {
+                        const uint8_t candidateEventId = data->mOutputPlaybackEventIds[outputCounter];
+                        if((UNUSED_ID != candidateEventId) && (MARKED_FOR_REMOVE != candidateEventId))
+                        {
+                            const uint32_t candidateEvent = data->mEvents[candidateEventId];
+                            const uint32_t candidateNoteOnClockCount = MR_QUANTIZE_ON(candidateEvent, quantisation);
+                            const uint32_t candidateNoteNr = MR_GET_NOTE_NR(candidateEvent);
+                            if(candidateNoteOnClockCount < oldestNoteOnClockCount)
+                            {
+                                oldestNoteOnClockCount = candidateNoteOnClockCount;
+                                oldestOutputChannelId = outputCounter;
+                                oldestNoteOnNoteNr = candidateNoteNr;
+                            }
+                            else if((candidateNoteOnClockCount == oldestNoteOnClockCount) && (candidateNoteNr < oldestNoteOnNoteNr))
+                            {
+                                oldestOutputChannelId = outputCounter;
+                                oldestNoteOnNoteNr = candidateNoteNr;
+                            }
+                        }
+                    }
+
+                    if((oldestOutputChannelId != UNUSED_ID) && (oldestNoteOnClockCount < noteOnClockCount))
+                    {
+                        //We found a playback event that we can stop.
+                        //Mark it and stop it later on.
+                        data->mOutputPlaybackEventIds[oldestOutputChannelId] = MARKED_FOR_REMOVE;
+                    }
+                    else
+                    {
+                        //We have saturated the output with simultaneous events.
+                        //We could stop the event with the lowest note number but that
+                        //would result in an output of just 1 tick duration.
+                        //We probably don't want that.
+                        //Better to just ignore the event completely and drop it.
+                        data->mTide++;
+                    }
+                }
+            }
+        }
+    }
+
+    //Iterate over all playback events that are due to stop and actually stop them.
+    //Iterate over all active playback events and route them to the output.
     if(ePhaseActive == data->mPhase || ((ePhaseStopped == data->mPhase) && (ePhaseActive == prevPhase)))
     {
-        //Iterate over all playback events that are due to stop and actually stop them.
-        //Iterate over all active playback events and route them to the output.
         for(outputCounter = 0; outputCounter < maxNbOutputs;  outputCounter++)
         {
             const uint32_t playbackEventId = data->mOutputPlaybackEventIds[outputCounter];

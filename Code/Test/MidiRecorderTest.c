@@ -2377,7 +2377,6 @@ void testConsectutiveOnOffEvents()
 
 void testMetronomeClockOutput()
 {
-
     //7 notes that are played simultaneously after quantisation.
     //We will have to drop one of them.
     struct MidiRecorderTestData test;
@@ -2433,6 +2432,99 @@ void testMetronomeClockOutput()
     //Disarm the
 }
 
+
+void testSubsequentNoteOnNoteOffsSameNote()
+{
+    //7 notes that are played simultaneously after quantisation.
+    //We will have to drop one of them.
+    struct MidiRecorderTestData test;
+    initialiseTest(&test);
+    struct MidiRecorder midiRecorder;
+    initialiseMidiRecorder(&test, &midiRecorder);
+
+    const uint32_t midiStartTick = test.mClockStartTick;
+    const uint32_t clockPeriod = test.mClockPulseTickPeriod;
+    const uint32_t nextClockAfterStart = clockPeriod*((midiStartTick + clockPeriod)/clockPeriod);
+    const uint32_t recordStart = nextClockAfterStart + test.mNbCountInClocks*clockPeriod;
+    const uint32_t recordEnd = recordStart + test.mNbRecordClocks*clockPeriod;
+    //const uint32_t playbackEnd = recordEnd + test.mNbRecordClocks*clockPeriod;
+
+    struct MidiNoteInputEvent e0 = {20, 50, recordStart + 20*clockPeriod + 10, recordStart + 21*clockPeriod - 10, 0};
+    struct MidiNoteInputEvent e1 = {20, 51, recordStart + 21*clockPeriod + 10, recordStart + 22*clockPeriod - 10, 1};
+    struct MidiNoteInputEvent e2 = {20, 51, recordStart + 22*clockPeriod + 10, recordStart + 23*clockPeriod - 10, 2};
+
+    test.mNoteEvents[0] = e0;
+    test.mNoteEvents[1] = e1;
+    test.mNoteEvents[2] = e2;
+    test.mNbNoteEvents = 3;
+
+    //Record all the events.
+    for(uint32_t i = 0; i < recordEnd; i++)
+    {
+        tickMidiRecorderTest(i, &test, &midiRecorder, NULL);
+    }
+    TEST_ASSERT(3 == midiRecorder.mPhase);
+    TEST_ASSERT(3 == midiRecorder.mNbEvents);
+
+    {
+        test.mQuantisation = 1;
+        struct MidiRecorderOutputStream outputStream;
+        initialiseStream(&outputStream);
+
+        //Run through one playback.
+        const uint32_t start = recordEnd + test.mNbRecordClocks*clockPeriod;
+        const uint32_t stop =start + test.mNbRecordClocks*clockPeriod;
+        for(uint32_t i = start; i < stop; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
+        }
+        TEST_ASSERT(3 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mNbEvents);
+        TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
+
+        sortStream(&outputStream);
+        TEST_ASSERT(3 == outputStream.mNbSortedEvents);
+        TEST_ASSERT(MR_GET_NOTE_NR(outputStream.mSortedEvents[0])==20);
+        TEST_ASSERT(MR_GET_NOTE_NR(outputStream.mSortedEvents[1])==20);
+        TEST_ASSERT(MR_GET_NOTE_NR(outputStream.mSortedEvents[2])==20);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[0])==20);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[1])==21);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[2])==22);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[0])==21);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[1])==22);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[2])==23);
+        TEST_ASSERT(3 == outputStream.mNb[0]);
+    }
+
+    {
+        test.mQuantisation = 8;
+        struct MidiRecorderOutputStream outputStream;
+        initialiseStream(&outputStream);
+
+        //Run through one playback.
+        const uint32_t start = recordEnd + test.mNbRecordClocks*clockPeriod;
+        const uint32_t stop =start + test.mNbRecordClocks*clockPeriod;
+        for(uint32_t i = start; i < stop; i++)
+        {
+            tickMidiRecorderTest(i, &test, &midiRecorder, &outputStream);
+        }
+        TEST_ASSERT(3 == midiRecorder.mPhase);
+        TEST_ASSERT(3 == midiRecorder.mNbEvents);
+        TEST_ASSERT(47 == midiRecorder.mMidiClockCount);
+
+        sortStream(&outputStream);
+        TEST_ASSERT(3 == outputStream.mNbSortedEvents);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[0])==24);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[1])==24);
+        TEST_ASSERT(MR_GET_NOTE_ON_CLOCK(outputStream.mSortedEvents[2])==24);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[0])==25);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[1])==25);
+        TEST_ASSERT(MR_GET_NOTE_OFF_CLOCK(outputStream.mSortedEvents[2])==25);
+        TEST_ASSERT(1 == outputStream.mNb[0]);
+        TEST_ASSERT(1 == outputStream.mNb[1]);
+        TEST_ASSERT(1 == outputStream.mNb[2]);
+    }
+}
 
 void testMidiRecorder()
 {
@@ -2490,10 +2582,10 @@ void testMidiRecorder()
     testMetronomeClockOutput();
 
     //Test what happens when multiple events with same note nr are recorded.
+    testSubsequentNoteOnNoteOffsSameNote();
 
     //Test note-ons and note-offs in last midi clock of loop.
     //Test multiple on/offs in single clock result in multiple outputs in single clock.
-
 }
 
 
