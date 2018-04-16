@@ -335,7 +335,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     if((rewindToStart != 0) && (eOperationalModeRecord == data->mOperationalMode))
     {
         //Any hanging notes that were just recorded need to be truncated.
-        for(uint8_t inputCounter = 0; inputCounter < maxNbInputs; inputCounter++)
+        for(inputCounter = 0; inputCounter < maxNbInputs; inputCounter++)
         {
             const uint8_t recordEventId = data->mInputRecordEventIds[inputCounter];
             if(UNUSED_ID != recordEventId)
