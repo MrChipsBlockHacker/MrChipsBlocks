@@ -1,0 +1,179 @@
+<block name="Midi_Note_Emulator">
+	<category>MidiTools</category>
+	<info></info>
+	<data name="d_midi_note_emulator">
+		<variable socket="in" info="MidiClockTrigger" value="0"/>
+		<variable socket="in" info="MidiStartStop" value="0"/>
+		<variable socket="out" info="MidiClockTrigger" />
+		<variable socket="out" info="MidiStartStop" />
+		<variable socket="out" info="MidiGateOutput0" />
+		<variable socket="out" info="MidiNoteOutput0" />
+		<variable socket="out" info="MidiVelOutput0" />
+		<variable socket="out" info="MidiGateOutput1" />
+		<variable socket="out" info="MidiNoteOutput1" />
+		<variable socket="out" info="MidiVelOutput1" />
+		<variable socket="out" info="MidiGateOutput2" />
+		<variable socket="out" info="MidiNoteOutput2" />
+		<variable socket="out" info="MidiVelOutput2" />
+		<variable socket="out" info="MidiGateOutput3" />
+		<variable socket="out" info="MidiNoteOutput3" />
+		<variable socket="out" info="MidiVelOutput3" />
+		<variable socket="out" info="MidiGateOutput4" />
+		<variable socket="out" info="MidiNoteOutput4" />
+		<variable socket="out" info="MidiVelOutput4" />
+		<variable socket="out" info="MidiGateOutput5" />
+		<variable socket="out" info="MidiNoteOutput5" />
+		<variable socket="out" info="MidiVelOutput5" />
+		<variable dtype="int32_t" name="mEvents[?]" editable="1" value="24,48,60,0" info="Notes (to generate)" />
+		<variable dtype="uint8_t" name="mTide" editable="0" value="0"/>
+		<variable dtype="uint8_t" name="mOutputEvents[6]" editable="0" value="{ 0 }"/>
+		<variable dtype="int16_t" name="mMidiClockCounter" editable="0" value="-1"/>
+		<variable dtype="uint8_t" name="mFirstTickComplete" editable="0" value="0"/>
+		<variable dtype="uint8_t" name="mMidiClockTriggerReady" editable="0" value="0"/>
+		<variable dtype="uint8_t" name="mOutputChannel" editable="0" value="0"/>
+		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
+	</data>
+	<function name="f_midi_note_emulator">
+	<![CDATA[
+	
+
+#ifdef	EMULATOR
+//#define _DEBUG           /* Uncomment this line to enable debugging */
+#ifdef 	_DEBUG
+#define MAXDBG	160	
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+FILE *_dbgfile = NULL;
+#define dbg(_fmt, ...) {												\
+	char path[255];														\
+	snprintf(path, 255, "%s\\%s.txt", getenv("HOMEPATH"), __func__);	\
+	time_t _time;														\
+	struct tm *_tm;														\
+	time(&_time);														\
+	_tm = localtime(&_time);											\
+	char _fmtbuf[MAXDBG];												\
+	sprintf(_fmtbuf, "Time: %s", asctime(_tm));							\
+	size_t timeBufLength = strlen(_fmtbuf);								\
+	sprintf(_fmtbuf + timeBufLength, _fmt, ##__VA_ARGS__);				\
+	if(strcmp(data->_lastdbg, _fmtbuf)) {								\
+		_dbgfile = fopen(path, "a");									\
+		fprintf(_dbgfile, _fmtbuf);	 									\
+		fflush(_dbgfile);												\
+		strcpy(data->_lastdbg, _fmtbuf);}}	
+#else //_DEBUG
+#define dbg(_fmt, ...)
+#endif //_DEBUG
+#else
+#define dbg(_fmt, ...)
+#endif //EMULATOR
+		
+		
+// ---------- Your code here:  ---------- //
+
+    //Route straight to the output.
+    data->out0 = *data->in0;
+    data->out1 = *data->in1;
+
+#ifdef EMULATOR
+
+    const int32_t midiClockTrigger = *data->in0;
+    const int32_t midiStart = *data->in1;
+
+    int32_t* const midiGateOuts[6] = {&data->out2,&data->out5,&data->out8,&data->out11, &data->out14,&data->out17};
+    int32_t* const midiNoteOuts[6] = {&data->out3,&data->out6,&data->out9,&data->out12, &data->out15,&data->out18};
+    int32_t* const midiVelOuts[6] = {&data->out4,&data->out7,&data->out10,&data->out13, &data->out16,&data->out19};
+
+    const uint8_t maxNbOutputs = sizeof(midiGateOuts)/sizeof(int32_t*);
+
+    if(0 == data->mFirstTickComplete)
+    {
+        memset(data->mOutputEvents, 0xff, sizeof(data->mOutputEvents));
+        data->mFirstTickComplete = 1;
+    }
+
+    if (midiStart && midiClockTrigger && data->mMidiClockTriggerReady)
+    {
+        //Can't receive another pulse until clock trigger goes negative.
+        data->mMidiClockTriggerReady = 0;
+
+        //Increment the midi clock counter.
+        data->mMidiClockCounter++;
+    }
+    else if (midiClockTrigger < 0)
+    {
+       //Trigger has gone negative, be ready to catch next crossing to positive.
+       data->mMidiClockTriggerReady = 1;
+    }
+
+
+    //Trigger one event.
+    if(data->mTide*4 < data->mEvents_length)
+    {
+        const int32_t noteOnClock = data->mEvents[4*data->mTide+0];
+        if(noteOnClock == data->mMidiClockCounter)
+        {
+            const int32_t outputChannel = data->mEvents[4*data->mTide+3];
+
+            if(*midiGateOuts[outputChannel])
+            {
+                //Already got an output.
+                //Stop it and wait for next tick.
+                *midiGateOuts[outputChannel] = 0;
+                data->mOutputEvents[outputChannel] = 0xff;
+            }
+            else
+            {
+                //Free output.
+                //Use it.
+                const int32_t noteNr = data->mEvents[4*data->mTide+2];
+                *midiGateOuts[outputChannel] = 1 << 10;
+                *midiNoteOuts[outputChannel] = noteNr << 10;
+                *midiVelOuts[outputChannel] = 100 << 3;
+                data->mOutputEvents[outputChannel]= data->mTide;
+                data->mTide++;
+            }
+        }
+    }
+
+    //Stop one event.
+    const uint8_t eventId = data->mOutputEvents[data->mOutputChannel];
+    if(0xff != eventId)
+    {
+        const uint32_t noteOffClock = data->mEvents[4*eventId+1];
+        if(noteOffClock == data->mMidiClockCounter)
+        {
+             const int32_t outputChannel = data->mEvents[4*eventId+3];
+            *midiGateOuts[outputChannel] = 0;
+            data->mOutputEvents[outputChannel] = 0xff;
+        }
+    }
+
+    data->mOutputChannel++;
+    if(maxNbOutputs == data->mOutputChannel)
+    {
+        data->mOutputChannel = 0;
+    }
+
+
+#endif // EMULATOR
+	
+// ---------- End of your code ---------- //
+
+#ifdef EMULATOR
+#ifdef 	_DEBUG
+	if(_dbgfile) fclose(_dbgfile);
+#endif //_DEBUG
+#endif //EMULATOR
+#undef dbg 
+#undef MAXDBG
+#undef _DEBUG
+
+	]]>
+	</function>
+	<help>
+	<![CDATA[
+<p>Midi Recorder</p> 
+	]]>
+	</help>
+</block>
