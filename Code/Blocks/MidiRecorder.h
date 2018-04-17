@@ -200,7 +200,7 @@ void tickMidiRecorder(struct MidiRecorder* data)
     //Store the output data for each output.
     int32_t* const midiGateOuts[6] = {&data->out0,&data->out3,&data->out6,&data->out9, &data->out12,&data->out15};
     int32_t* const midiNoteOuts[6] = {&data->out1,&data->out4,&data->out7,&data->out10, &data->out13,&data->out16};
-    int32_t* const midiVelOuts[7] = {&data->out2,&data->out5,&data->out8,&data->out11, &data->out14,&data->out17};
+    int32_t* const midiVelOuts[6] = {&data->out2,&data->out5,&data->out8,&data->out11, &data->out14,&data->out17};
 
     //Store the metronome clock output.
     int32_t* const metronomeClockOut = &data->out18;
