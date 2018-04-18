@@ -9,7 +9,6 @@
 		<variable dtype="uint32_t" name="mBPM" editable="1" value="120" info="Emulated beats per minute"/>
 		<variable dtype="uint32_t" name="mClockPulseWidth" editable="1" value="0.1" info="Emulated clock pulse width"/>
 		<variable dtype="uint32_t" name="mPhase" editable="0" value="0"/>
-		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
 	</data>
 	<function name="f_midi_clock_emulator">
 	<![CDATA[
