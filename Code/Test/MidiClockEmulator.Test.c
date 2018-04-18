@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-
+#include "CommonTest.h"
 #include "Blocks/MidiClockEmulator.h"
 #include "MidiClockEmulatorTest.h"
-#include "CommonTest.h"
 
 void testBPM(const float beatsPerMinute, const float testTimeInSeconds, const float width)
 {

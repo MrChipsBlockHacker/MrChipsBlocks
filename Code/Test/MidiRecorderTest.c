@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-
+#include "CommonTest.h"
 #include "Blocks/MidiRecorder.h"
 #include "MidiRecorderTest.h"
-#include "CommonTest.h"
 
 void testMacros()
 {
