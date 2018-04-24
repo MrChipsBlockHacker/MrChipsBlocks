@@ -8,7 +8,9 @@
 		<variable socket="out" info="StartStopOut" />
 		<variable dtype="uint32_t" name="mBPM" editable="1" value="120" info="Emulated beats per minute"/>
 		<variable dtype="uint32_t" name="mClockPulseWidth" editable="1" value="0.1" info="Emulated clock pulse width"/>
+		<variable dtype="uint32_t" name="mStartTick" editable="1" value="100" info="Start tick"/>
 		<variable dtype="uint32_t" name="mPhase" editable="0" value="0"/>
+		<variable dtype="uint32_t" name="mTickCounter" editable="0" value="0"/>
 	</data>
 	<function name="f_midi_clock_emulator">
 	<![CDATA[
@@ -93,12 +95,20 @@ FILE *_dbgfile = NULL;
         data->out0 = -511;
     }
 
-    //Set the gate on.
-    data->out1 = 1 << 10;
+    //Set the gate on according to the tick counter.
+    if(data->mTickCounter < (data->mStartTick >> 10))
+    {
+        data->mTickCounter++;
+        data->out1 = 0;
+    }
+    else
+    {
+        data->out1 = 1 << 10;
+    }
 
     //Change in phase per tick.
     //Performed with 17 fractional bits.
-    data->mPhase += nbClocksPerSecond17/SMP_RATE;;
+    data->mPhase += nbClocksPerSecond17/SMP_RATE;
 
 
 #endif // EMULATOR

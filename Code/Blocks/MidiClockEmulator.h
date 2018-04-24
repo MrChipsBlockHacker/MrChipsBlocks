@@ -12,6 +12,8 @@ struct MidiClockEmulator
     uint32_t mBPM;
     uint32_t mClockPulseWidth;
     uint32_t mPhase;
+    uint32_t mStartTick;
+    uint32_t mTickCounter;
 };
 
 void tickMidiClockEmulator(struct MidiClockEmulator* data)
@@ -65,8 +67,16 @@ void tickMidiClockEmulator(struct MidiClockEmulator* data)
         data->out0 = -511;
     }
 
-    //Set the gate on.
-    data->out1 = 1 << 10;
+    //Set the gate on according to the tick counter.
+    if(data->mTickCounter < (data->mStartTick >> 10))
+    {
+        data->mTickCounter++;
+        data->out1 = 0;
+    }
+    else
+    {
+        data->out1 = 1 << 10;
+    }
 
     //Change in phase per tick.
     //Performed with 17 fractional bits.

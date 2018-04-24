@@ -61,6 +61,7 @@
 		<variable dtype="uint16_t" name="mTickCounter" editable="0" value="0"/>
 		<variable dtype="uint16_t" name="mNbTicksPerClock" editable="0" value="0"/>
 		<variable dtype="uint8_t" name="mOperationalMode" editable="0" value="0"/>
+		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
 	</data>
 	<function name="f_midi_recorder">
 	<![CDATA[

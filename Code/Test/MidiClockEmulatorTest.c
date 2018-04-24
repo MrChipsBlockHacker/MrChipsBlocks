@@ -13,6 +13,7 @@ void testBPM(const float beatsPerMinute, const float testTimeInSeconds, const fl
     midiClockEmulator.mPhase = 0;
     midiClockEmulator.mBPM = toFX(beatsPerMinute, 10);
     midiClockEmulator.mClockPulseWidth = toFX(width, 10);
+    midiClockEmulator.mStartTick = 0;
 
     //Tick until we get the first clock pulse.
     uint32_t firstOnTime = 0xffffffff;

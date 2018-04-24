@@ -24,14 +24,13 @@
 		<variable socket="out" info="MidiVelOutput5" />
 		<variable socket="out" info="MidiClockTrigger" />
 		<variable socket="out" info="MidiStartStop" />
-		<variable dtype="int32_t" name="mEvents[?]" editable="1" value="24,48,60,0" info="Notes (to generate)" />
+		<variable dtype="int32_t" name="mEvents[?]" editable="1" value="120,144,60,0" info="Notes (to generate)" />
 		<variable dtype="uint8_t" name="mTide" editable="0" value="0"/>
 		<variable dtype="uint8_t" name="mOutputEvents[6]" editable="0" value="{ 0 }"/>
 		<variable dtype="int16_t" name="mMidiClockCounter" editable="0" value="0"/>
 		<variable dtype="uint8_t" name="mFirstTickComplete" editable="0" value="0"/>
 		<variable dtype="uint8_t" name="mMidiClockTriggerReady" editable="0" value="0"/>
 		<variable dtype="uint8_t" name="mOutputChannel" editable="0" value="0"/>
-		<variable dtype="char" name="_lastdbg[160]" value="{ 0 }"/>
 	</data>
 	<function name="f_midi_note_emulator">
 	<![CDATA[
